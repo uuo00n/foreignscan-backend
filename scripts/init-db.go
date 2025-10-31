@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -73,13 +76,144 @@ func getLocation(sceneID string) string {
 	return "西区-D栋"
 }
 
+// 从用户获取输入
+func getUserInput(prompt string, defaultValue string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("%s [%s]: ", prompt, defaultValue)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return defaultValue
+	}
+	
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return defaultValue
+	}
+	
+	return input
+}
+
+// 从用户获取是/否输入
+func getUserConfirmation(prompt string, defaultValue bool) bool {
+	defaultStr := "y"
+	if !defaultValue {
+		defaultStr = "n"
+	}
+	
+	for {
+		input := getUserInput(prompt+" (y/n)", defaultStr)
+		input = strings.ToLower(input)
+		
+		if input == "y" || input == "yes" {
+			return true
+		} else if input == "n" || input == "no" {
+			return false
+		} else if input == defaultStr {
+			return defaultValue
+		}
+		
+		fmt.Println("请输入 y 或 n")
+	}
+}
+
+// 创建图片记录
+func createImageRecord(file os.FileInfo, seqNum int, withTestData bool) Image {
+	// 解析文件信息
+	sceneID, timestamp := parseFileInfo(file.Name())
+	location := getLocation(sceneID)
+	
+	// 创建基本图片记录
+	img := Image{
+		SequenceNumber: seqNum,
+		SceneID:        sceneID,
+		Timestamp:      timestamp,
+		Location:       location,
+		Filename:       file.Name(),
+		Path:           "uploads/" + file.Name(),
+		IsDetected:     false,
+		HasIssue:       false,
+		IssueType:      "",
+		DetectionResults: []interface{}{},
+	}
+	
+	// 如果需要测试数据，添加随机检测结果
+	if withTestData {
+		// 问题类型列表
+		issueTypes := []string{"裂缝", "磨损", "变形", ""}
+		
+		// 随机决定是否已检测和是否有问题
+		img.IsDetected = seqNum%3 != 0 // 2/3的图片已检测
+		img.HasIssue = img.IsDetected && seqNum%2 == 0 // 已检测的图片中一半有问题
+		
+		// 选择问题类型
+		if img.HasIssue {
+			issueIndex := (seqNum % 3)
+			img.IssueType = issueTypes[issueIndex]
+			
+			// 创建检测结果
+			img.DetectionResults = []interface{}{
+				bson.M{
+					"x":          100 + (seqNum * 20),
+					"y":          150 + (seqNum * 15),
+					"width":      40 + (seqNum % 30),
+					"height":     30 + (seqNum % 20),
+					"type":       img.IssueType,
+					"confidence": 0.75 + float64(seqNum%20)/100.0,
+				},
+			}
+		}
+	}
+	
+	return img
+}
+
 func main() {
+	// 定义命令行参数
+	var withTestData bool
+	var interactive bool
+	var mongoURI string
+	var dbName string
+	var uploadsDir string
+	
+	flag.BoolVar(&withTestData, "test-data", false, "是否插入测试数据")
+	flag.BoolVar(&interactive, "interactive", true, "是否使用交互模式")
+	flag.StringVar(&mongoURI, "mongo-uri", "mongodb://localhost:27017", "MongoDB连接URI")
+	flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
+	flag.StringVar(&uploadsDir, "uploads-dir", "./uploads", "上传目录路径")
+	
+	flag.Parse()
+	
+	// 如果是交互模式，询问用户选项
+	if interactive {
+		fmt.Println("=== 数据库初始化工具 ===")
+		fmt.Println("该工具将初始化数据库并创建必要的集合和索引。")
+		
+		// 询问是否插入测试数据
+		withTestData = getUserConfirmation("是否为图片添加测试检测数据？", withTestData)
+		
+		// 询问MongoDB连接信息
+		mongoURI = getUserInput("MongoDB连接URI", mongoURI)
+		dbName = getUserInput("数据库名称", dbName)
+		uploadsDir = getUserInput("上传目录路径", uploadsDir)
+		
+		fmt.Println("\n=== 初始化配置 ===")
+		fmt.Printf("MongoDB URI: %s\n", mongoURI)
+		fmt.Printf("数据库名称: %s\n", dbName)
+		fmt.Printf("上传目录: %s\n", uploadsDir)
+		fmt.Printf("插入测试数据: %v\n", withTestData)
+		
+		// 最终确认
+		confirm := getUserConfirmation("\n确认以上配置并继续？", true)
+		if !confirm {
+			fmt.Println("操作已取消")
+			return
+		}
+	}
+	
 	// 连接MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 默认连接本地MongoDB
-	mongoURI := "mongodb://localhost:27017"
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURI))
 	if err != nil {
 		log.Fatalf("连接MongoDB失败: %v", err)
@@ -98,7 +232,7 @@ func main() {
 	fmt.Println("成功连接到MongoDB")
 
 	// 获取数据库和集合
-	db := client.Database("foreignscan")
+	db := client.Database(dbName)
 	imagesCollection := db.Collection("images")
 
 	// 删除现有集合（如果存在）
@@ -121,84 +255,43 @@ func main() {
 	fmt.Println("成功创建sequenceNumber索引")
 
 	// 读取uploads目录中的真实图片文件
-	uploadsDir := "./uploads"
 	files, err := ioutil.ReadDir(uploadsDir)
 	if err != nil {
 		log.Fatalf("读取uploads目录失败: %v", err)
 	}
 
-	// 准备真实图片数据
-	var realImages []Image
+	// 准备图片数据
+	var images []Image
 	var seqNum int = 1
-	
-	// 问题类型列表
-	issueTypes := []string{"裂缝", "磨损", "变形", ""}
 	
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".jpg") {
-			// 解析文件信息
-			sceneID, timestamp := parseFileInfo(file.Name())
-			location := getLocation(sceneID)
-			
-			// 随机决定是否已检测和是否有问题
-			isDetected := seqNum%3 != 0 // 2/3的图片已检测
-			hasIssue := isDetected && seqNum%2 == 0 // 已检测的图片中一半有问题
-			
-			// 选择问题类型
-			issueType := ""
-			var detectionResults []interface{}
-			
-			if hasIssue {
-				issueIndex := (seqNum % 3)
-				issueType = issueTypes[issueIndex]
-				
-				// 创建检测结果
-				detectionResults = []interface{}{
-					bson.M{
-						"x":          100 + (seqNum * 20),
-						"y":          150 + (seqNum * 15),
-						"width":      40 + (seqNum % 30),
-						"height":     30 + (seqNum % 20),
-						"type":       issueType,
-						"confidence": 0.75 + float64(seqNum%20)/100.0,
-					},
-				}
-			} else {
-				detectionResults = []interface{}{}
-			}
-			
 			// 创建图片记录
-			img := Image{
-				SequenceNumber:   seqNum,
-				SceneID:          sceneID,
-				Timestamp:        timestamp,
-				Location:         location,
-				Filename:         file.Name(),
-				Path:             "uploads/" + file.Name(),
-				IsDetected:       isDetected,
-				HasIssue:         hasIssue,
-				IssueType:        issueType,
-				DetectionResults: detectionResults,
-			}
-			
-			realImages = append(realImages, img)
+			img := createImageRecord(file, seqNum, withTestData)
+			images = append(images, img)
 			seqNum++
 		}
 	}
 
-	// 插入真实图片数据
-	if len(realImages) > 0 {
+	// 插入图片数据
+	if len(images) > 0 {
 		var documents []interface{}
-		for _, img := range realImages {
+		for _, img := range images {
 			documents = append(documents, img)
 		}
 
 		insertResult, err := imagesCollection.InsertMany(ctx, documents)
 		if err != nil {
-			log.Fatalf("插入真实图片数据失败: %v", err)
+			log.Fatalf("插入图片数据失败: %v", err)
 		}
 
-		fmt.Printf("成功插入 %d 条真实图片数据\n", len(insertResult.InsertedIDs))
+		fmt.Printf("成功插入 %d 条图片数据\n", len(insertResult.InsertedIDs))
+		
+		if withTestData {
+			fmt.Println("已为图片添加测试检测数据")
+		} else {
+			fmt.Println("图片数据已插入，但未添加测试检测数据")
+		}
 	} else {
 		fmt.Println("未找到任何图片文件")
 	}

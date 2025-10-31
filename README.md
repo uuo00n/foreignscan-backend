@@ -54,6 +54,37 @@ backend/
 go mod download
 ```
 
+### 初始化数据库
+
+项目提供了数据库初始化脚本，可以通过以下命令运行：
+
+```bash
+go run scripts/init-db.go
+```
+
+脚本支持以下命令行参数：
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `--test-data` | 是否插入测试数据 | false |
+| `--interactive` | 是否使用交互模式 | true |
+| `--mongo-uri` | MongoDB连接URI | mongodb://localhost:27017 |
+| `--db-name` | 数据库名称 | foreignscan |
+| `--uploads-dir` | 上传目录路径 | ./uploads |
+
+示例：
+
+```bash
+# 不使用交互模式，插入测试数据
+go run scripts/init-db.go --interactive=false --test-data=true
+
+# 不使用交互模式，不插入测试数据
+go run scripts/init-db.go --interactive=false --test-data=false
+
+# 使用自定义数据库名称
+go run scripts/init-db.go --db-name=mydb
+```
+
 ### 运行服务
 
 ```bash

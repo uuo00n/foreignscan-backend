@@ -26,10 +26,22 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 获取请求中的元数据
-	sceneID := c.PostForm("sceneId")
-	if sceneID == "" {
-		sceneID = "未知场景"
+	sceneIDStr := c.PostForm("sceneId")
+	var sceneID primitive.ObjectID
+	
+	// 如果提供了场景ID，尝试转换为ObjectID
+	if sceneIDStr != "" {
+		var err error
+		sceneID, err = primitive.ObjectIDFromHex(sceneIDStr)
+		if err != nil {
+			// 如果转换失败，创建一个新的ObjectID
+			sceneID = primitive.NewObjectID()
+		}
+	} else {
+		// 如果没有提供场景ID，创建一个新的ObjectID
+		sceneID = primitive.NewObjectID()
 	}
+	
 	location := c.PostForm("location")
 
 	// 生成文件名
@@ -43,12 +55,22 @@ func UploadImage(c *gin.Context) {
 		filename = utils.GenerateUUID() + ext
 	}
 
-	// 保存文件
-	dst := filepath.Join("uploads", filename)
+	// 创建图片专用目录
+	imagesDir := filepath.Join("uploads/images", sceneID.Hex())
+	if err := utils.EnsureDir(imagesDir); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "创建图片目录失败: " + err.Error(),
+		})
+		return
+	}
+	
+	// 保存文件到图片目录
+	dst := filepath.Join(imagesDir, filename)
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "保存文件失败",
+			"message": "保存文件失败: " + err.Error(),
 		})
 		return
 	}
@@ -64,18 +86,21 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 创建新的图片记录
+	now := time.Now()
 	newImage := models.Image{
 		ID:               primitive.NewObjectID(),
 		SequenceNumber:   sequenceNumber,
 		SceneID:          sceneID,
-		Timestamp:        time.Now(),
+		Timestamp:        now,
 		Location:         location,
 		Filename:         filename,
-		Path:             fmt.Sprintf("/uploads/%s", filename),
+		Path:             dst,
 		IsDetected:       false,
 		HasIssue:         false,
 		IssueType:        "",
 		DetectionResults: []interface{}{},
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}
 
 	// 保存到数据库

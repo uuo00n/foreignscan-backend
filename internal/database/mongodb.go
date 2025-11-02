@@ -14,7 +14,7 @@ var (
 	// 全局数据库连接
 	client     *mongo.Client
 	database   *mongo.Database
-	collection *mongo.Collection
+	collections map[string]*mongo.Collection
 )
 
 // Connect 连接到MongoDB数据库
@@ -40,9 +40,16 @@ func Connect() error {
 		return err
 	}
 	
-	// 获取数据库和集合
+	// 获取数据库
 	database = client.Database(cfg.DatabaseName)
-	collection = database.Collection("images")
+	
+	// 初始化集合映射
+	collections = make(map[string]*mongo.Collection)
+	
+	// 添加所有需要的集合
+	collections["images"] = database.Collection("images")
+	collections["scenes"] = database.Collection("scenes")
+	collections["styleImages"] = database.Collection("styleImages")
 	
 	return nil
 }
@@ -60,10 +67,14 @@ func Close() error {
 
 // GetCollection 获取指定的集合
 func GetCollection(name string) *mongo.Collection {
-	if name == "images" {
-		return collection
+	// 如果集合已经存在于映射中，直接返回
+	if col, exists := collections[name]; exists {
+		return col
 	}
-	return database.Collection(name)
+	
+	// 如果集合不存在于映射中，创建并添加到映射
+	collections[name] = database.Collection(name)
+	return collections[name]
 }
 
 // GetDatabase 获取数据库实例

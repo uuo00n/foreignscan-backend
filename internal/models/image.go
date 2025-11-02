@@ -15,7 +15,7 @@ import (
 type Image struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	SequenceNumber   int                `bson:"sequenceNumber" json:"sequenceNumber"`
-	SceneID          string             `bson:"sceneId" json:"sceneId"`
+	SceneID          primitive.ObjectID `bson:"sceneId" json:"sceneId"`           // 关联的场景ID
 	Timestamp        time.Time          `bson:"timestamp" json:"timestamp"`
 	Location         string             `bson:"location" json:"location"`
 	Filename         string             `bson:"filename" json:"filename"`
@@ -24,6 +24,8 @@ type Image struct {
 	HasIssue         bool               `bson:"hasIssue" json:"hasIssue"`
 	IssueType        string             `bson:"issueType" json:"issueType"`
 	DetectionResults []interface{}      `bson:"detectionResults" json:"detectionResults"`
+	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`       // 创建时间
+	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`       // 更新时间
 }
 
 // GetNextSequence 获取下一个序列号

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -15,10 +14,8 @@ import (
 	"foreignscan/internal/database"
 	"foreignscan/internal/handlers"
 	"foreignscan/internal/middleware"
-	"foreignscan/internal/models"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func main() {
@@ -119,173 +116,21 @@ func setupRoutes(r *gin.Engine) {
 		// 检测图片
 		api.POST("/detect", handlers.DetectImage)
 		
-		// 场景相关API - 转换为Gin风格的处理函数
-		api.GET("/scenes", func(c *gin.Context) {
-			scenes, err := models.FindAllScenes()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "获取场景失败: " + err.Error(),
-				})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"scenes": scenes,
-			})
-		})
-		api.GET("/scenes/:id", func(c *gin.Context) {
-			id := c.Param("id")
-			scene, err := models.FindSceneByID(id)
-			if err != nil {
-				c.JSON(http.StatusNotFound, gin.H{
-					"success": false,
-					"message": "场景不存在: " + err.Error(),
-				})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"scene": scene,
-			})
-		})
-		api.POST("/scenes", func(c *gin.Context) {
-			var scene models.Scene
-			if err := c.ShouldBindJSON(&scene); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"success": false,
-					"message": "无效的请求数据: " + err.Error(),
-				})
-				return
-			}
-			scene.CreatedAt = time.Now()
-			scene.UpdatedAt = time.Now()
-			if err := scene.Save(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "创建场景失败: " + err.Error(),
-				})
-				return
-			}
-			c.JSON(http.StatusCreated, gin.H{
-				"success": true,
-				"scene": scene,
-			})
-		})
+		// 场景相关API - 使用迁移后的Gin处理器
+		api.GET("/scenes", handlers.GetScenes)
+		api.GET("/scenes/:id", handlers.GetScene)
+		api.POST("/scenes", handlers.CreateScene)
+		api.PUT("/scenes/:id", handlers.UpdateScene)
+		api.DELETE("/scenes/:id", handlers.DeleteScene)
 		
-		// 样式图片相关API - 转换为Gin风格的处理函数
-		api.GET("/style-images", func(c *gin.Context) {
-			styleImages, err := models.FindAllStyleImages()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "获取样式图失败: " + err.Error(),
-				})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"styleImages": styleImages,
-			})
-		})
-		api.GET("/style-images/scene/:sceneId", func(c *gin.Context) {
-			sceneId := c.Param("sceneId")
-			styleImages, err := models.FindStyleImagesBySceneID(sceneId)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "获取样式图失败: " + err.Error(),
-				})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success": true,
-				"styleImages": styleImages,
-			})
-		})
-		
-		// 上传样式图片
-		api.POST("/style-images", func(c *gin.Context) {
-			// 获取表单数据
-			file, header, err := c.Request.FormFile("file")
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"success": false,
-					"message": "获取上传文件失败: " + err.Error(),
-				})
-				return
-			}
-			defer file.Close()
-			
-			// 获取场景ID
-			sceneIDStr := c.PostForm("sceneId")
-			if sceneIDStr == "" {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"success": false,
-					"message": "缺少场景ID",
-				})
-				return
-			}
-			
-			// 将场景ID转换为ObjectID
-			sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"success": false,
-					"message": "无效的场景ID",
-				})
-				return
-			}
-			
-			// 创建样式图目录
-			styleDir := filepath.Join("./uploads/styles", sceneIDStr)
-			if err := os.MkdirAll(styleDir, os.ModePerm); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "创建样式图目录失败: " + err.Error(),
-				})
-				return
-			}
-			
-			// 生成唯一文件名
-			ext := filepath.Ext(header.Filename)
-			filename := "style_" + time.Now().Format("20060102150405") + ext
-			filePath := filepath.Join(styleDir, filename)
-			
-			// 保存文件
-			if err := c.SaveUploadedFile(header, filePath); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "保存文件失败: " + err.Error(),
-				})
-				return
-			}
-			
-			// 创建样式图记录
-			styleImage := models.StyleImage{
-				ID:          primitive.NewObjectID(),
-				Name:        c.PostForm("name"),
-				Description: c.PostForm("description"),
-				SceneID:     sceneID,
-				Filename:    filename,
-				Path:        filePath,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			}
-			
-			// 保存到数据库
-			if err := styleImage.Save(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"success": false,
-					"message": "保存样式图片记录失败: " + err.Error(),
-				})
-				return
-			}
-			
-			c.JSON(http.StatusCreated, gin.H{
-				"success": true,
-				"styleImage": styleImage,
-			})
-		})
+		// 样式图片相关API - 使用迁移后的Gin处理器
+		api.GET("/style-images", handlers.GetStyleImages)
+		api.GET("/style-images/scene/:sceneId", handlers.GetStyleImagesByScene)
+		api.GET("/style-images/:id", handlers.GetStyleImage)
+		api.POST("/style-images", handlers.UploadStyleImage)
+		api.PUT("/style-images/:id", handlers.UpdateStyleImage)
+		api.DELETE("/style-images/:id", handlers.DeleteStyleImage)
+
+		// 样式图片路由已在上面注册完成
 	}
 }

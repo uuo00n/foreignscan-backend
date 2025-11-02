@@ -6,6 +6,7 @@ import (
 	"foreignscan/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetImages 获取所有图片列表
@@ -23,6 +24,138 @@ func GetImages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"images":  images,
+	})
+}
+
+// GetSceneImages 获取特定场景下的所有图片
+func GetSceneImages(c *gin.Context) {
+	// 从URL获取场景ID
+	sceneIDStr := c.Param("id")
+	
+	// 将场景ID转换为ObjectID
+	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "无效的场景ID: " + err.Error(),
+		})
+		return
+	}
+	
+	// 查找该场景下的所有图片
+	images, err := models.FindBySceneID(sceneID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取场景图片失败: " + err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"images":  images,
+	})
+}
+
+// GetSceneFirstImage 获取特定场景下的第一张图片
+func GetSceneFirstImage(c *gin.Context) {
+	// 从URL获取场景ID
+	sceneIDStr := c.Param("id")
+	
+	// 将场景ID转换为ObjectID
+	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "无效的场景ID: " + err.Error(),
+		})
+		return
+	}
+	
+	// 查找该场景下的第一张图片（按序列号排序）
+	image, err := models.FindFirstBySceneID(sceneID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取场景第一张图片失败: " + err.Error(),
+		})
+		return
+	}
+	
+	// 如果没有找到图片
+	if image == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "该场景下没有图片",
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"image":   image,
+	})
+}
+
+// GetAllScenesFirstImage 获取所有场景的第一张图片
+func GetAllScenesFirstImage(c *gin.Context) {
+	// 获取所有场景
+	scenes, err := models.FindAllScenes()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取场景列表失败: " + err.Error(),
+		})
+		return
+	}
+	
+	// 存储每个场景的第一张图片
+	type SceneWithFirstImage struct {
+		SceneID      primitive.ObjectID `json:"sceneId"`
+		SceneName    string             `json:"sceneName"`
+		FirstImage   *models.Image      `json:"firstImage"`
+	}
+	
+	result := make([]SceneWithFirstImage, 0, len(scenes))
+	
+	// 遍历所有场景，获取每个场景的第一张图片
+	for _, scene := range scenes {
+		// 查找该场景下的第一张图片
+		image, _ := models.FindFirstBySceneID(scene.ID)
+		
+		// 添加到结果中（即使没有图片）
+		result = append(result, SceneWithFirstImage{
+			SceneID:    scene.ID,
+			SceneName:  scene.Name,
+			FirstImage: image,
+		})
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    result,
+	})
+}
+
+// GetImageDetail 获取单个图片的详细信息
+func GetImageDetail(c *gin.Context) {
+	// 从URL获取图片ID
+	imageIDStr := c.Param("id")
+	
+	// 查找图片详细信息
+	image, err := models.FindByID(imageIDStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "未找到图片: " + err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"image":   image,
 	})
 }
 

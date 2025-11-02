@@ -36,14 +36,14 @@ func main() {
 		os.Mkdir("uploads", 0755)
 	}
 
-	// 静态文件服务 - 使用绝对路径确保正确访问
-	uploadsPath := "../../uploads"
-	absUploadsPath, _ := filepath.Abs(uploadsPath)
-	r.Static("/uploads", absUploadsPath)
+	// 静态文件服务 - 使用相对路径，适合交付到客户环境
+	// 直接使用项目根目录下的uploads文件夹
+	uploadsPath := "./uploads"
+	r.Static("/uploads", uploadsPath)
 	r.Static("/public", "./public")
 	
 	// 添加调试日志
-	fmt.Printf("上传目录路径: %s\n", absUploadsPath)
+	fmt.Printf("上传目录路径: %s\n", uploadsPath)
 
 	// 初始化数据库连接
 	if err := database.Connect(); err != nil {
@@ -99,6 +99,18 @@ func setupRoutes(r *gin.Engine) {
 	{
 		// 获取图片列表
 		api.GET("/images", handlers.GetImages)
+		
+		// 获取单个图片详细信息
+		api.GET("/images/:id", handlers.GetImageDetail)
+		
+		// 获取特定场景下的图片列表
+		api.GET("/scenes/:id/images", handlers.GetSceneImages)
+		
+		// 获取特定场景下的第一张图片
+		api.GET("/scenes/:id/first-image", handlers.GetSceneFirstImage)
+		
+		// 获取所有场景的第一张图片
+		api.GET("/scenes/all/first-images", handlers.GetAllScenesFirstImage)
 		
 		// 上传图片
 		api.POST("/upload", handlers.UploadImage)

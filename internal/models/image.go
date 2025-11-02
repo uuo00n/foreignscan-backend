@@ -97,6 +97,53 @@ func FindByID(id string) (*Image, error) {
 	return &image, nil
 }
 
+// FindBySceneID 根据场景ID查找图片
+func FindBySceneID(sceneID primitive.ObjectID) ([]Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	collection := database.GetCollection("images")
+	
+	// 查询指定场景下的所有图片，按序列号升序排列
+	opts := options.Find().SetSort(bson.D{{Key: "sequenceNumber", Value: 1}})
+	cursor, err := collection.Find(ctx, bson.M{"sceneId": sceneID}, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	
+	// 解析结果
+	var images []Image
+	if err := cursor.All(ctx, &images); err != nil {
+		return nil, err
+	}
+	
+	return images, nil
+}
+
+// FindFirstBySceneID 根据场景ID查找第一张图片
+func FindFirstBySceneID(sceneID primitive.ObjectID) (*Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	collection := database.GetCollection("images")
+	
+	// 查询指定场景下的第一张图片（按序列号升序排列）
+	opts := options.FindOne().SetSort(bson.D{{Key: "sequenceNumber", Value: 1}})
+	var image Image
+	err := collection.FindOne(ctx, bson.M{"sceneId": sceneID}, opts).Decode(&image)
+	
+	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			// 没有找到图片，返回nil而不是错误
+			return nil, nil
+		}
+		return nil, err
+	}
+	
+	return &image, nil
+}
+
 // Save 保存图片
 func (i *Image) Save() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

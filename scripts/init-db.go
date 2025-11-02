@@ -59,6 +59,14 @@ type ImageModel struct {
 	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`
 }
 
+// 文件夹映射关系
+type FolderMapping struct {
+	ImageFolder string
+	StyleFolder string
+	Name        string
+	Location    string
+}
+
 // 从文件名解析场景ID和时间
 func parseFileInfo(filename string) (string, time.Time) {
 	// 从文件名中提取日期信息 (格式: YYYYMMDD)
@@ -143,13 +151,13 @@ func getUserConfirmation(prompt string, defaultValue bool) bool {
 }
 
 // 创建场景记录
-func createSceneRecord(sceneIDStr string, location string) Scene {
+func createSceneRecord(folderMapping FolderMapping) Scene {
 	now := time.Now()
 	return Scene{
 		ID:          primitive.NewObjectID(),
-		Name:        "场景 " + sceneIDStr,
-		Description: "自动创建的场景",
-		Location:    location,
+		Name:        folderMapping.Name,
+		Description: "根据文件夹映射创建的场景",
+		Location:    folderMapping.Location,
 		Status:      "active",
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -157,16 +165,16 @@ func createSceneRecord(sceneIDStr string, location string) Scene {
 }
 
 // 创建样式图记录
-func createStyleImageRecord(sceneID primitive.ObjectID, name string) StyleImage {
+func createStyleImageRecord(sceneID primitive.ObjectID, styleFolder string, styleName string) StyleImage {
 	now := time.Now()
-	// 使用场景ID作为目录名，统一存储结构
-	stylePath := "uploads/styles/" + sceneID.Hex() + "/style_" + name + ".jpg"
+	// 使用样式文件夹中的图片
+	stylePath := filepath.Join("uploads/styles", styleFolder, "example.jpg")
 	return StyleImage{
 		ID:          primitive.NewObjectID(),
 		SceneID:     sceneID,
-		Name:        name,
+		Name:        styleName,
 		Description: "场景的样式图",
-		Filename:    "style_" + name + ".jpg",
+		Filename:    "example.jpg",
 		Path:        stylePath,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -174,10 +182,9 @@ func createStyleImageRecord(sceneID primitive.ObjectID, name string) StyleImage 
 }
 
 // 创建图片记录
-func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID, withTestData bool) ImageModel {
+func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID, imageFolder string) ImageModel {
 	// 解析文件信息
-	sceneIDStr, timestamp := parseFileInfo(file.Name())
-	location := getLocation(sceneIDStr)
+	_, timestamp := parseFileInfo(file.Name())
 	now := time.Now()
 
 	// 创建基本图片记录
@@ -185,9 +192,9 @@ func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID,
 		SequenceNumber:   seqNum,
 		SceneID:          sceneID,
 		Timestamp:        timestamp,
-		Location:         location,
+		Location:         "", // 将在后面设置
 		Filename:         file.Name(),
-		Path:             filepath.Join("uploads/images", sceneID.Hex(), file.Name()),
+		Path:             filepath.Join("uploads/images", imageFolder, file.Name()),
 		IsDetected:       false,
 		HasIssue:         false,
 		IssueType:        "",
@@ -196,71 +203,41 @@ func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID,
 		UpdatedAt:        now,
 	}
 
-	// 如果需要测试数据，添加随机检测结果
-	if withTestData {
-		// 问题类型列表
-		issueTypes := []string{"裂缝", "磨损", "变形", ""}
-
-		// 随机决定是否已检测和是否有问题
-		img.IsDetected = seqNum%3 != 0                 // 2/3的图片已检测
-		img.HasIssue = img.IsDetected && seqNum%2 == 0 // 已检测的图片中一半有问题
-
-		// 选择问题类型
-		if img.HasIssue {
-			issueIndex := (seqNum % 3)
-			img.IssueType = issueTypes[issueIndex]
-
-			// 创建检测结果
-			img.DetectionResults = []interface{}{
-				bson.M{
-					"x":          100 + (seqNum * 20),
-					"y":          150 + (seqNum * 15),
-					"width":      40 + (seqNum % 30),
-					"height":     30 + (seqNum % 20),
-					"type":       img.IssueType,
-					"confidence": 0.75 + float64(seqNum%20)/100.0,
-				},
-			}
-		}
-	}
-
 	return img
 }
 
 func main() {
 	// 定义命令行参数
-	var withTestData bool
 	var interactive bool
 	var mongoURI string
 	var dbName string
-	var uploadsDir string
+	var imagesDir string
+	var stylesDir string
 
-	flag.BoolVar(&withTestData, "test-data", false, "是否插入测试数据")
 	flag.BoolVar(&interactive, "interactive", true, "是否使用交互模式")
 	flag.StringVar(&mongoURI, "mongo-uri", "mongodb://localhost:27017", "MongoDB连接URI")
 	flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
-	flag.StringVar(&uploadsDir, "uploads-dir", "./uploads/images", "上传目录路径")
+	flag.StringVar(&imagesDir, "images-dir", "./uploads/images", "图片目录路径")
+	flag.StringVar(&stylesDir, "styles-dir", "./uploads/styles", "样式图目录路径")
 
 	flag.Parse()
 
 	// 如果是交互模式，询问用户选项
 	if interactive {
 		fmt.Println("=== 数据库初始化工具 ===")
-		fmt.Println("该工具将初始化数据库并创建必要的集合和索引。")
-
-		// 询问是否插入测试数据
-		withTestData = getUserConfirmation("是否为图片添加测试检测数据？", withTestData)
+		fmt.Println("该工具将根据文件夹对应关系初始化数据库。")
 
 		// 询问MongoDB连接信息
 		mongoURI = getUserInput("MongoDB连接URI", mongoURI)
 		dbName = getUserInput("数据库名称", dbName)
-		uploadsDir = getUserInput("上传目录路径", uploadsDir)
+		imagesDir = getUserInput("图片目录路径", imagesDir)
+		stylesDir = getUserInput("样式图目录路径", stylesDir)
 
 		fmt.Println("\n=== 初始化配置 ===")
 		fmt.Printf("MongoDB URI: %s\n", mongoURI)
 		fmt.Printf("数据库名称: %s\n", dbName)
-		fmt.Printf("上传目录: %s\n", uploadsDir)
-		fmt.Printf("插入测试数据: %v\n", withTestData)
+		fmt.Printf("图片目录: %s\n", imagesDir)
+		fmt.Printf("样式图目录: %s\n", stylesDir)
 
 		// 最终确认
 		confirm := getUserConfirmation("\n确认以上配置并继续？", true)
@@ -338,94 +315,89 @@ func main() {
 
 	fmt.Println("成功创建索引")
 
-	// 读取uploads目录中的真实图片文件
-	files, err := ioutil.ReadDir(uploadsDir)
-	if err != nil {
-		log.Fatalf("读取uploads目录失败: %v", err)
+	// 定义文件夹映射关系
+	folderMappings := []FolderMapping{
+		{
+			ImageFolder: "001",
+			StyleFolder: "001-machine",
+			Name:        "机器设备场景",
+			Location:    "北区-A栋",
+		},
+		{
+			ImageFolder: "002",
+			StyleFolder: "002-drum",
+			Name:        "鼓形设备场景",
+			Location:    "南区-B栋",
+		},
+		{
+			ImageFolder: "003",
+			StyleFolder: "003-excavator",
+			Name:        "挖掘机场景",
+			Location:    "东区-C栋",
+		},
 	}
 
 	// 创建场景映射表，用于跟踪已创建的场景
 	sceneMap := make(map[string]primitive.ObjectID)
-
-	// 首先创建场景
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".jpg") {
-			// 解析场景ID
-			sceneIDStr, _ := parseFileInfo(file.Name())
-			location := getLocation(sceneIDStr)
-
-			// 如果场景尚未创建，则创建它
-			if _, exists := sceneMap[sceneIDStr]; !exists {
-				scene := createSceneRecord(sceneIDStr, location)
-				result, err := scenesCollection.InsertOne(ctx, scene)
-				if err != nil {
-					log.Fatalf("插入场景失败: %v", err)
-				}
-
-				// 存储场景ID
-				sceneMap[sceneIDStr] = scene.ID
-
-				// 为每个场景创建一个样式图
-				styleImage := createStyleImageRecord(scene.ID, sceneIDStr)
-				_, err = styleImagesCollection.InsertOne(ctx, styleImage)
-				if err != nil {
-					log.Fatalf("插入样式图失败: %v", err)
-				}
-
-				fmt.Printf("创建场景: %s, ID: %s\n", scene.Name, result.InsertedID)
-			}
-		}
-	}
-
-	// 准备图片数据
-	var images []ImageModel
 	var seqNum int = 1
 
-	// 确保图片目录存在
-	if err := os.MkdirAll("uploads/images", os.ModePerm); err != nil {
-		log.Fatalf("创建图片目录失败: %v", err)
-	}
+	// 处理每个文件夹映射
+	for _, mapping := range folderMappings {
+		// 创建场景记录
+		scene := createSceneRecord(mapping)
+		result, err := scenesCollection.InsertOne(ctx, scene)
+		if err != nil {
+			log.Fatalf("插入场景失败: %v", err)
+		}
 
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".jpg") {
-			// 获取场景ID
-			sceneIDStr, _ := parseFileInfo(file.Name())
-			sceneID := sceneMap[sceneIDStr]
+		// 存储场景ID
+		sceneMap[mapping.ImageFolder] = scene.ID
+		fmt.Printf("创建场景: %s, ID: %s\n", scene.Name, result.InsertedID)
 
-			// 确保场景的图片目录存在
-			sceneImagesDir := filepath.Join("uploads/images", sceneID.Hex())
-			if err := os.MkdirAll(sceneImagesDir, os.ModePerm); err != nil {
-				log.Fatalf("创建场景图片目录失败: %v", err)
+		// 创建样式图记录
+		styleImage := createStyleImageRecord(scene.ID, mapping.StyleFolder, mapping.Name+"样式")
+		_, err = styleImagesCollection.InsertOne(ctx, styleImage)
+		if err != nil {
+			log.Fatalf("插入样式图失败: %v", err)
+		}
+		fmt.Printf("创建样式图: %s\n", styleImage.Name)
+
+		// 读取该文件夹中的图片
+		imagesFolderPath := filepath.Join(imagesDir, mapping.ImageFolder)
+		files, err := ioutil.ReadDir(imagesFolderPath)
+		if err != nil {
+			log.Printf("读取图片目录失败: %v，跳过此文件夹", err)
+			continue
+		}
+
+		// 处理该文件夹中的每张图片
+		var folderImages []ImageModel
+		for _, file := range files {
+			if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".jpg") {
+				// 创建图片记录
+				img := createImageRecord(file, seqNum, scene.ID, mapping.ImageFolder)
+				img.Location = mapping.Location // 设置位置信息
+				folderImages = append(folderImages, img)
+				seqNum++
+			}
+		}
+
+		// 插入该文件夹的图片数据
+		if len(folderImages) > 0 {
+			var documents []interface{}
+			for _, img := range folderImages {
+				documents = append(documents, img)
 			}
 
-			// 创建图片记录
-			img := createImageRecord(file, seqNum, sceneID, withTestData)
-			images = append(images, img)
-			seqNum++
-		}
-	}
+			insertResult, err := imagesCollection.InsertMany(ctx, documents)
+			if err != nil {
+				log.Fatalf("插入图片数据失败: %v", err)
+			}
 
-	// 插入图片数据
-	if len(images) > 0 {
-		var documents []interface{}
-		for _, img := range images {
-			documents = append(documents, img)
-		}
-
-		insertResult, err := imagesCollection.InsertMany(ctx, documents)
-		if err != nil {
-			log.Fatalf("插入图片数据失败: %v", err)
-		}
-
-		fmt.Printf("成功插入 %d 条图片数据\n", len(insertResult.InsertedIDs))
-
-		if withTestData {
-			fmt.Println("已为图片添加测试检测数据")
+			fmt.Printf("成功插入 %d 条图片数据到场景 %s\n", len(insertResult.InsertedIDs), scene.Name)
 		} else {
-			fmt.Println("图片数据已插入，但未添加测试检测数据")
+			fmt.Printf("在文件夹 %s 中未找到任何图片文件\n", mapping.ImageFolder)
 		}
-	} else {
-		fmt.Println("未找到任何图片文件")
 	}
 
 	fmt.Println("数据库初始化完成!")

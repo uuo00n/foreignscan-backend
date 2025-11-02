@@ -13,7 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// GetStyleImages 获取所有样式图
+// GetStyleImages godoc
+// @Summary 获取所有样式图片
+// @Description 获取系统中所有可用的样式图片列表
+// @Tags style-images
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "成功获取样式图片列表"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /style-images [get]
 func GetStyleImages(c *gin.Context) {
 	// 获取所有样式图
 	styleImages, err := models.FindAllStyleImages()
@@ -32,7 +40,16 @@ func GetStyleImages(c *gin.Context) {
 	})
 }
 
-// GetStyleImagesByScene 获取指定场景的所有样式图
+// GetStyleImagesByScene godoc
+// @Summary 获取指定场景的所有样式图
+// @Description 获取特定场景下的所有样式图片列表
+// @Tags style-images
+// @Accept json
+// @Produce json
+// @Param sceneId path string true "场景ID"
+// @Success 200 {object} map[string]interface{} "成功获取样式图片列表"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /style-images/scene/{sceneId} [get]
 func GetStyleImagesByScene(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneID := c.Param("sceneId")
@@ -54,7 +71,16 @@ func GetStyleImagesByScene(c *gin.Context) {
 	})
 }
 
-// GetStyleImage 获取单个样式图
+// GetStyleImage godoc
+// @Summary 获取单个样式图
+// @Description 根据ID获取特定样式图片的详细信息
+// @Tags style-images
+// @Accept json
+// @Produce json
+// @Param id path string true "样式图ID"
+// @Success 200 {object} map[string]interface{} "成功获取样式图"
+// @Failure 404 {object} map[string]interface{} "样式图不存在"
+// @Router /style-images/{id} [get]
 func GetStyleImage(c *gin.Context) {
 	// 从URL获取样式图ID
 	id := c.Param("id")
@@ -76,7 +102,19 @@ func GetStyleImage(c *gin.Context) {
 	})
 }
 
-// UploadStyleImage 上传样式图
+// UploadStyleImage godoc
+// @Summary 上传样式图
+// @Description 上传新的样式图片并关联到特定场景
+// @Tags style-images
+// @Accept multipart/form-data
+// @Produce json
+// @Param sceneId formData string true "场景ID"
+// @Param file formData file true "样式图文件"
+// @Param name formData string false "样式图名称"
+// @Success 200 {object} map[string]interface{} "成功上传样式图"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /style-images [post]
 func UploadStyleImage(c *gin.Context) {
 	// 获取场景ID
 	sceneIDStr := c.PostForm("sceneId")
@@ -161,7 +199,19 @@ func UploadStyleImage(c *gin.Context) {
 	})
 }
 
-// UpdateStyleImage 更新样式图
+// UpdateStyleImage godoc
+// @Summary 更新样式图
+// @Description 更新已存在的样式图信息
+// @Tags style-images
+// @Accept json
+// @Produce json
+// @Param id path string true "样式图ID"
+// @Param styleImage body models.StyleImage true "更新的样式图信息"
+// @Success 200 {object} map[string]interface{} "成功更新样式图"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 404 {object} map[string]interface{} "样式图不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /style-images/{id} [put]
 func UpdateStyleImage(c *gin.Context) {
 	// 从URL获取样式图ID
 	id := c.Param("id")
@@ -220,7 +270,17 @@ func UpdateStyleImage(c *gin.Context) {
 	})
 }
 
-// DeleteStyleImage 删除样式图
+// DeleteStyleImage godoc
+// @Summary 删除样式图
+// @Description 删除指定的样式图及其文件
+// @Tags style-images
+// @Accept json
+// @Produce json
+// @Param id path string true "样式图ID"
+// @Success 204 "成功删除样式图"
+// @Failure 404 {object} map[string]interface{} "样式图不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /style-images/{id} [delete]
 func DeleteStyleImage(c *gin.Context) {
 	// 从URL获取样式图ID
 	id := c.Param("id")

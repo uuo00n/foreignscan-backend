@@ -9,7 +9,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// GetImages 获取所有图片列表
+// GetImages godoc
+// @Summary 获取所有图片列表
+// @Description 获取系统中所有图片的列表
+// @Tags images
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "成功获取图片列表"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /images [get]
 func GetImages(c *gin.Context) {
 	// 获取所有图片
 	images, err := models.FindAll()
@@ -27,7 +35,16 @@ func GetImages(c *gin.Context) {
 	})
 }
 
-// GetSceneImages 获取特定场景下的所有图片
+// GetSceneImages godoc
+// @Summary 获取场景下的所有图片
+// @Description 获取特定场景下的所有图片列表
+// @Tags scenes,images
+// @Accept json
+// @Produce json
+// @Param id path string true "场景ID"
+// @Success 200 {object} map[string]interface{} "成功获取场景图片"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/{id}/images [get]
 func GetSceneImages(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneIDStr := c.Param("id")
@@ -58,7 +75,18 @@ func GetSceneImages(c *gin.Context) {
 	})
 }
 
-// GetSceneFirstImage 获取特定场景下的第一张图片
+// GetSceneFirstImage godoc
+// @Summary 获取场景的第一张图片
+// @Description 根据场景ID获取该场景下的第一张图片
+// @Tags scenes,images
+// @Accept json
+// @Produce json
+// @Param scene_id path string true "场景ID"
+// @Success 200 {object} map[string]interface{} "成功获取场景第一张图片"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 404 {object} map[string]interface{} "场景不存在或没有图片"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/{scene_id}/first-image [get]
 func GetSceneFirstImage(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneIDStr := c.Param("id")
@@ -138,7 +166,16 @@ func GetAllScenesFirstImage(c *gin.Context) {
 	})
 }
 
-// GetImageDetail 获取单个图片的详细信息
+// GetImageDetail godoc
+// @Summary 获取单个图片详情
+// @Description 根据ID获取特定图片的详细信息
+// @Tags images
+// @Accept json
+// @Produce json
+// @Param id path string true "图片ID"
+// @Success 200 {object} map[string]interface{} "成功获取图片详情"
+// @Failure 404 {object} map[string]interface{} "图片不存在"
+// @Router /images/{id} [get]
 func GetImageDetail(c *gin.Context) {
 	// 从URL获取图片ID
 	imageIDStr := c.Param("id")
@@ -159,7 +196,18 @@ func GetImageDetail(c *gin.Context) {
 	})
 }
 
-// DetectImage 处理图片检测
+// DetectImage godoc
+// @Summary 检测图片内容
+// @Description 分析图片内容并返回检测结果
+// @Tags images
+// @Accept json
+// @Produce json
+// @Param id path string true "图片ID"
+// @Success 200 {object} map[string]interface{} "成功检测图片"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 404 {object} map[string]interface{} "图片不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /images/{id}/detect [get]
 func DetectImage(c *gin.Context) {
 	var req struct {
 		ImageID string `json:"imageId"`

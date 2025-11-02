@@ -13,7 +13,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// UploadImage 处理图片上传
+// UploadImage godoc
+// @Summary 上传图片
+// @Description 上传新图片到系统
+// @Tags upload
+// @Accept multipart/form-data
+// @Produce json
+// @Param scene_id formData string true "场景ID"
+// @Param file formData file true "要上传的图片文件"
+// @Success 201 {object} map[string]interface{} "成功上传图片"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /upload [post]
 func UploadImage(c *gin.Context) {
 	// 获取上传的文件
 	file, err := c.FormFile("image")

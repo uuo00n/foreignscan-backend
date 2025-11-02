@@ -10,7 +10,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// GetScenes 获取所有场景
+// GetScenes godoc
+// @Summary 获取所有场景
+// @Description 获取系统中所有可用的场景列表
+// @Tags scenes
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.Scene
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /scenes [get]
 func GetScenes(c *gin.Context) {
 	// 获取所有场景
 	scenes, err := models.FindAllScenes()
@@ -29,7 +37,18 @@ func GetScenes(c *gin.Context) {
 	})
 }
 
-// GetScene 获取单个场景
+// GetScene godoc
+// @Summary 获取单个场景详情
+// @Description 根据ID获取单个场景的详细信息
+// @Tags scenes
+// @Accept json
+// @Produce json
+// @Param id path string true "场景ID"
+// @Success 200 {object} map[string]interface{} "成功获取场景详情"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 404 {object} map[string]interface{} "场景不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/{id} [get]
 func GetScene(c *gin.Context) {
 	// 从URL获取场景ID
 	id := c.Param("id")
@@ -51,7 +70,17 @@ func GetScene(c *gin.Context) {
 	})
 }
 
-// CreateScene 创建新场景
+// CreateScene godoc
+// @Summary 创建新场景
+// @Description 创建一个新的场景
+// @Tags scenes
+// @Accept json
+// @Produce json
+// @Param scene body map[string]interface{} true "场景信息"
+// @Success 201 {object} map[string]interface{} "成功创建场景"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes [post]
 func CreateScene(c *gin.Context) {
 	// 解析请求体
 	var scene models.Scene

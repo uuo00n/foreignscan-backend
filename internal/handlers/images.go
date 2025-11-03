@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"foreignscan/internal/models"
 
@@ -31,6 +32,56 @@ func GetImages(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
+		"images":  images,
+	})
+}
+
+// GetImagesByDate godoc
+// @Summary 根据日期获取图片
+// @Description 获取指定日期上传的所有图片
+// @Tags images
+// @Accept json
+// @Produce json
+// @Param date query string true "日期 (格式: YYYY-MM-DD)"
+// @Success 200 {object} map[string]interface{} "成功获取图片列表"
+// @Failure 400 {object} map[string]interface{} "日期格式错误"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /images/by-date [get]
+func GetImagesByDate(c *gin.Context) {
+	// 从查询参数获取日期
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "日期参数不能为空",
+		})
+		return
+	}
+
+	// 解析日期字符串 (YYYY-MM-DD)
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "日期格式错误，请使用YYYY-MM-DD格式",
+		})
+		return
+	}
+
+	// 查询指定日期的图片
+	images, err := models.FindByDate(date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取图片失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"date":    dateStr,
+		"count":   len(images),
 		"images":  images,
 	})
 }

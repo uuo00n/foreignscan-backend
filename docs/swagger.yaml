@@ -155,6 +155,38 @@ paths:
       summary: 检测图片内容
       tags:
       - images
+  /images/by-date:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定日期上传的所有图片
+      parameters:
+      - description: '日期 (格式: YYYY-MM-DD)'
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功获取图片列表
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 日期格式错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 根据日期获取图片
+      tags:
+      - images
   /scenes:
     get:
       consumes:

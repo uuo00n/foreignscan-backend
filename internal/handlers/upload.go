@@ -123,10 +123,13 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
+	// 构建正确的访问路径
+	accessPath := fmt.Sprintf("/uploads/images/%s/%s", sceneID.Hex(), filename)
+	
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,
 		"file":           filename,
-		"path":           fmt.Sprintf("/uploads/%s", filename),
+		"path":           accessPath,
 		"imageId":        newImage.ID.Hex(),
 		"sequenceNumber": sequenceNumber,
 	})

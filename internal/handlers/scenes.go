@@ -76,7 +76,7 @@ func GetScene(c *gin.Context) {
 // @Tags scenes
 // @Accept json
 // @Produce json
-// @Param scene body map[string]interface{} true "场景信息"
+// @Param scene body models.Scene true "场景信息 (name: 场景名称, description: 场景描述, location: 场景位置, status: 场景状态)"
 // @Success 201 {object} map[string]interface{} "成功创建场景"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Failure 500 {object} map[string]interface{} "服务器错误"

@@ -295,13 +295,12 @@ const docTemplate = `{
                 "summary": "创建新场景",
                 "parameters": [
                     {
-                        "description": "场景信息",
+                        "description": "场景信息 (name: 场景名称, description: 场景描述, location: 场景位置, status: 场景状态)",
                         "name": "scene",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/models.Scene"
                         }
                     }
                 ],
@@ -330,7 +329,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/scenes/first-images": {
+        "/scenes/all/first-images": {
             "get": {
                 "description": "获取系统中所有场景的第一张图片，用于场景预览展示",
                 "consumes": [

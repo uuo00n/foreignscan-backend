@@ -250,13 +250,13 @@ paths:
       - application/json
       description: 创建一个新的场景
       parameters:
-      - description: 场景信息
+      - description: '场景信息 (name: 场景名称, description: 场景描述, location: 场景位置, status:
+          场景状态)'
         in: body
         name: scene
         required: true
         schema:
-          additionalProperties: true
-          type: object
+          $ref: '#/definitions/models.Scene'
       produces:
       - application/json
       responses:
@@ -451,7 +451,7 @@ paths:
       tags:
       - scenes
       - images
-  /scenes/first-images:
+  /scenes/all/first-images:
     get:
       consumes:
       - application/json

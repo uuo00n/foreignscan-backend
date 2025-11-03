@@ -118,7 +118,7 @@ func GetImagesByDateAndScene(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 从查询参数获取场景ID
 	sceneIDStr := c.Query("scene_id")
 	if sceneIDStr == "" {
@@ -128,7 +128,7 @@ func GetImagesByDateAndScene(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 将场景ID转换为ObjectID
 	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
 	if err != nil {
@@ -171,7 +171,7 @@ func GetImagesByDateAndScene(c *gin.Context) {
 func GetSceneImages(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneIDStr := c.Param("id")
-	
+
 	// 将场景ID转换为ObjectID
 	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
 	if err != nil {
@@ -181,7 +181,7 @@ func GetSceneImages(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 查找该场景下的所有图片
 	images, err := models.FindBySceneID(sceneID)
 	if err != nil {
@@ -191,7 +191,7 @@ func GetSceneImages(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"images":  images,
@@ -213,7 +213,7 @@ func GetSceneImages(c *gin.Context) {
 func GetSceneFirstImage(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneIDStr := c.Param("id")
-	
+
 	// 将场景ID转换为ObjectID
 	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
 	if err != nil {
@@ -223,7 +223,7 @@ func GetSceneFirstImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 查找该场景下的第一张图片（按序列号排序）
 	image, err := models.FindFirstBySceneID(sceneID)
 	if err != nil {
@@ -233,7 +233,7 @@ func GetSceneFirstImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 如果没有找到图片
 	if image == nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -242,7 +242,7 @@ func GetSceneFirstImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"image":   image,
@@ -257,7 +257,7 @@ func GetSceneFirstImage(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} map[string]interface{} "成功获取所有场景的第一张图片"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
-// @Router /scenes/first-images [get]
+// @Router /scenes/all/first-images [get]
 func GetAllScenesFirstImage(c *gin.Context) {
 	// 获取所有场景
 	scenes, err := models.FindAllScenes()
@@ -268,21 +268,21 @@ func GetAllScenesFirstImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 存储每个场景的第一张图片
 	type SceneWithFirstImage struct {
-		SceneID      primitive.ObjectID `json:"sceneId"`
-		SceneName    string             `json:"sceneName"`
-		FirstImage   *models.Image      `json:"firstImage"`
+		SceneID    primitive.ObjectID `json:"sceneId"`
+		SceneName  string             `json:"sceneName"`
+		FirstImage *models.Image      `json:"firstImage"`
 	}
-	
+
 	result := make([]SceneWithFirstImage, 0, len(scenes))
-	
+
 	// 遍历所有场景，获取每个场景的第一张图片
 	for _, scene := range scenes {
 		// 查找该场景下的第一张图片
 		image, _ := models.FindFirstBySceneID(scene.ID)
-		
+
 		// 添加到结果中（即使没有图片）
 		result = append(result, SceneWithFirstImage{
 			SceneID:    scene.ID,
@@ -290,7 +290,7 @@ func GetAllScenesFirstImage(c *gin.Context) {
 			FirstImage: image,
 		})
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    result,
@@ -310,7 +310,7 @@ func GetAllScenesFirstImage(c *gin.Context) {
 func GetImageDetail(c *gin.Context) {
 	// 从URL获取图片ID
 	imageIDStr := c.Param("id")
-	
+
 	// 查找图片详细信息
 	image, err := models.FindByID(imageIDStr)
 	if err != nil {
@@ -320,7 +320,7 @@ func GetImageDetail(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"image":   image,
@@ -406,7 +406,7 @@ func DetectImage(c *gin.Context) {
 	image.IsDetected = true
 	image.HasIssue = hasIssue
 	image.IssueType = issueType
-	
+
 	// 将map转换为interface{}切片
 	detectionResults := make([]interface{}, len(results))
 	for i, result := range results {

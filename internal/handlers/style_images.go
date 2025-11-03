@@ -137,7 +137,7 @@ func UploadStyleImage(c *gin.Context) {
 	}
 
 	// 获取上传的文件
-	file, header, err := c.Request.FormFile("styleImage")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,

@@ -102,6 +102,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/images/by-date-scene": {
+            "get": {
+                "description": "获取指定日期和场景ID的所有图片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "images"
+                ],
+                "summary": "根据日期和场景ID获取图片",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "日期 (格式: YYYY-MM-DD)",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "scene_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取图片列表",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/images/{id}": {
             "get": {
                 "description": "根据ID获取特定图片的详细信息",

@@ -126,6 +126,9 @@ func setupRoutes(r *gin.Engine) {
 		// 根据日期获取图片
 		api.GET("/images/by-date", handlers.GetImagesByDate)
 		
+		// 根据日期和场景ID获取图片
+		api.GET("/images/by-date-scene", handlers.GetImagesByDateAndScene)
+		
 		// 上传图片
 		api.POST("/upload", handlers.UploadImage)
 		api.POST("/upload-image", handlers.UploadImage) // 兼容客户端的路由

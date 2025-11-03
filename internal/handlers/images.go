@@ -86,6 +86,78 @@ func GetImagesByDate(c *gin.Context) {
 	})
 }
 
+// GetImagesByDateAndScene godoc
+// @Summary 根据日期和场景ID获取图片
+// @Description 获取指定日期和场景ID的所有图片
+// @Tags images
+// @Accept json
+// @Produce json
+// @Param date query string true "日期 (格式: YYYY-MM-DD)"
+// @Param scene_id query string true "场景ID"
+// @Success 200 {object} map[string]interface{} "成功获取图片列表"
+// @Failure 400 {object} map[string]interface{} "参数错误"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /images/by-date-scene [get]
+func GetImagesByDateAndScene(c *gin.Context) {
+	// 从查询参数获取日期
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "日期参数不能为空",
+		})
+		return
+	}
+
+	// 解析日期字符串 (YYYY-MM-DD)
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "日期格式错误，请使用YYYY-MM-DD格式",
+		})
+		return
+	}
+	
+	// 从查询参数获取场景ID
+	sceneIDStr := c.Query("scene_id")
+	if sceneIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "场景ID参数不能为空",
+		})
+		return
+	}
+	
+	// 将场景ID转换为ObjectID
+	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "无效的场景ID: " + err.Error(),
+		})
+		return
+	}
+
+	// 查询指定日期和场景的图片
+	images, err := models.FindByDateAndSceneID(date, sceneID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取图片失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"date":    dateStr,
+		"sceneId": sceneIDStr,
+		"count":   len(images),
+		"images":  images,
+	})
+}
+
 // GetSceneImages godoc
 // @Summary 获取场景下的所有图片
 // @Description 获取特定场景下的所有图片列表

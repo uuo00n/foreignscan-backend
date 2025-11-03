@@ -187,6 +187,43 @@ paths:
       summary: 根据日期获取图片
       tags:
       - images
+  /images/by-date-scene:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定日期和场景ID的所有图片
+      parameters:
+      - description: '日期 (格式: YYYY-MM-DD)'
+        in: query
+        name: date
+        required: true
+        type: string
+      - description: 场景ID
+        in: query
+        name: scene_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功获取图片列表
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 根据日期和场景ID获取图片
+      tags:
+      - images
   /scenes:
     get:
       consumes:

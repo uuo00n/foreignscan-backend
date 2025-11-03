@@ -180,6 +180,43 @@ func FindByDate(date time.Time) ([]Image, error) {
 	return images, nil
 }
 
+// FindByDateAndSceneID 根据日期和场景ID查找图片
+func FindByDateAndSceneID(date time.Time, sceneID primitive.ObjectID) ([]Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	
+	collection := database.GetCollection("images")
+	
+	// 计算日期范围（当天00:00:00到23:59:59）
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour).Add(-time.Nanosecond)
+	
+	// 查询在指定日期范围内且属于指定场景的图片
+	filter := bson.M{
+		"createdAt": bson.M{
+			"$gte": startOfDay,
+			"$lte": endOfDay,
+		},
+		"sceneId": sceneID,
+	}
+	
+	// 按创建时间降序排列
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	cursor, err := collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	
+	// 解析结果
+	var images []Image
+	if err := cursor.All(ctx, &images); err != nil {
+		return nil, err
+	}
+	
+	return images, nil
+}
+
 // Save 保存图片
 func (i *Image) Save() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

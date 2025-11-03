@@ -210,6 +210,34 @@ paths:
       tags:
       - scenes
   /scenes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据ID删除指定场景
+      parameters:
+      - description: 场景ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 成功删除场景
+        "404":
+          description: 场景不存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除场景
+      tags:
+      - scenes
     get:
       consumes:
       - application/json
@@ -244,6 +272,48 @@ paths:
             additionalProperties: true
             type: object
       summary: 获取单个场景详情
+      tags:
+      - scenes
+    put:
+      consumes:
+      - application/json
+      description: 根据ID更新指定场景的信息
+      parameters:
+      - description: 场景ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新的场景信息
+        in: body
+        name: scene
+        required: true
+        schema:
+          $ref: '#/definitions/models.Scene'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功更新场景
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 场景不存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新场景信息
       tags:
       - scenes
   /scenes/{id}/images:
@@ -309,6 +379,28 @@ paths:
             additionalProperties: true
             type: object
       summary: 获取场景的第一张图片
+      tags:
+      - scenes
+      - images
+  /scenes/first-images:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统中所有场景的第一张图片，用于场景预览展示
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功获取所有场景的第一张图片
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取所有场景的第一张图片
       tags:
       - scenes
       - images

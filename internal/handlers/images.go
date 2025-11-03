@@ -126,7 +126,15 @@ func GetSceneFirstImage(c *gin.Context) {
 	})
 }
 
-// GetAllScenesFirstImage 获取所有场景的第一张图片
+// GetAllScenesFirstImage godoc
+// @Summary 获取所有场景的第一张图片
+// @Description 获取系统中所有场景的第一张图片，用于场景预览展示
+// @Tags scenes,images
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "成功获取所有场景的第一张图片"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/first-images [get]
 func GetAllScenesFirstImage(c *gin.Context) {
 	// 获取所有场景
 	scenes, err := models.FindAllScenes()

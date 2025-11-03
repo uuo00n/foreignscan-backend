@@ -113,7 +113,19 @@ func CreateScene(c *gin.Context) {
 	})
 }
 
-// UpdateScene 更新场景
+// UpdateScene godoc
+// @Summary 更新场景信息
+// @Description 根据ID更新指定场景的信息
+// @Tags scenes
+// @Accept json
+// @Produce json
+// @Param id path string true "场景ID"
+// @Param scene body models.Scene true "更新的场景信息"
+// @Success 200 {object} map[string]interface{} "成功更新场景"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Failure 404 {object} map[string]interface{} "场景不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/{id} [put]
 func UpdateScene(c *gin.Context) {
 	// 从URL获取场景ID
 	id := c.Param("id")
@@ -170,7 +182,17 @@ func UpdateScene(c *gin.Context) {
 	})
 }
 
-// DeleteScene 删除场景
+// DeleteScene godoc
+// @Summary 删除场景
+// @Description 根据ID删除指定场景
+// @Tags scenes
+// @Accept json
+// @Produce json
+// @Param id path string true "场景ID"
+// @Success 204 {object} nil "成功删除场景"
+// @Failure 404 {object} map[string]interface{} "场景不存在"
+// @Failure 500 {object} map[string]interface{} "服务器错误"
+// @Router /scenes/{id} [delete]
 func DeleteScene(c *gin.Context) {
 	// 从URL获取场景ID
 	id := c.Param("id")

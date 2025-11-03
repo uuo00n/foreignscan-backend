@@ -497,12 +497,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "成功删除场景",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
+                    "204": {
+                        "description": "成功删除场景"
                     },
                     "404": {
                         "description": "场景不存在",

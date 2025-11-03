@@ -189,7 +189,7 @@ func UpdateScene(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "场景ID"
-// @Success 200 {object} map[string]interface{} "成功删除场景"
+// @Success 204 {object} nil "成功删除场景"
 // @Failure 404 {object} map[string]interface{} "场景不存在"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /scenes/{id} [delete]
@@ -218,8 +218,5 @@ func DeleteScene(c *gin.Context) {
 	}
 
 	// 返回成功响应
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "场景删除成功",
-	})
+	c.Status(http.StatusNoContent)
 }

@@ -133,9 +133,6 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/upload", handlers.UploadImage)
 		api.POST("/upload-image", handlers.UploadImage) // 兼容客户端的路由
 		
-		// 检测图片
-		api.POST("/detect", handlers.DetectImage)
-		
 		// 场景相关API - 使用迁移后的Gin处理器
 		api.GET("/scenes", handlers.GetScenes)
 		api.GET("/scenes/:id", handlers.GetScene)

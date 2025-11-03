@@ -292,8 +292,11 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
+        "200":
           description: 成功删除场景
+          schema:
+            additionalProperties: true
+            type: object
         "404":
           description: 场景不存在
           schema:

@@ -27,7 +27,7 @@ import (
 // @Router /upload [post]
 func UploadImage(c *gin.Context) {
 	// 获取上传的文件
-	file, err := c.FormFile("image")
+	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,

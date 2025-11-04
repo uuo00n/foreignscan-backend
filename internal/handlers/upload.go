@@ -19,7 +19,7 @@ import (
 // @Tags upload
 // @Accept multipart/form-data
 // @Produce json
-// @Param scene_id formData string true "场景ID"
+// @Param sceneId formData string true "场景ID"
 // @Param file formData file true "要上传的图片文件"
 // @Success 201 {object} map[string]interface{} "成功上传图片"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"

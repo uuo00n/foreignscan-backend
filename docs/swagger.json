@@ -193,60 +193,6 @@
                 }
             }
         },
-        "/images/{id}/detect": {
-            "get": {
-                "description": "分析图片内容并返回检测结果",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "images"
-                ],
-                "summary": "检测图片内容",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "图片ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功检测图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "图片不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/scenes": {
             "get": {
                 "description": "获取系统中所有可用的场景列表",
@@ -514,6 +460,61 @@
                 }
             }
         },
+        "/scenes/{id}/first-image": {
+            "get": {
+                "description": "根据场景ID获取该场景下的第一张图片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scenes",
+                    "images"
+                ],
+                "summary": "获取场景的第一张图片",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取场景第一张图片",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "场景不存在或没有图片",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/scenes/{id}/images": {
             "get": {
                 "description": "获取特定场景下的所有图片列表",
@@ -540,61 +541,6 @@
                 "responses": {
                     "200": {
                         "description": "成功获取场景图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/{scene_id}/first-image": {
-            "get": {
-                "description": "根据场景ID获取该场景下的第一张图片",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes",
-                    "images"
-                ],
-                "summary": "获取场景的第一张图片",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "scene_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功获取场景第一张图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "场景不存在或没有图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -898,7 +844,7 @@
                     {
                         "type": "string",
                         "description": "场景ID",
-                        "name": "scene_id",
+                        "name": "sceneId",
                         "in": "formData",
                         "required": true
                     },

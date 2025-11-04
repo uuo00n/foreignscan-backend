@@ -118,43 +118,6 @@ paths:
       summary: 获取单个图片详情
       tags:
       - images
-  /images/{id}/detect:
-    get:
-      consumes:
-      - application/json
-      description: 分析图片内容并返回检测结果
-      parameters:
-      - description: 图片ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功检测图片
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: 图片不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 检测图片内容
-      tags:
-      - images
   /images/by-date:
     get:
       consumes:
@@ -385,35 +348,7 @@ paths:
       summary: 更新场景信息
       tags:
       - scenes
-  /scenes/{id}/images:
-    get:
-      consumes:
-      - application/json
-      description: 获取特定场景下的所有图片列表
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功获取场景图片
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取场景下的所有图片
-      tags:
-      - scenes
-      - images
-  /scenes/{scene_id}/first-image:
+  /scenes/{id}/first-image:
     get:
       consumes:
       - application/json
@@ -421,7 +356,7 @@ paths:
       parameters:
       - description: 场景ID
         in: path
-        name: scene_id
+        name: id
         required: true
         type: string
       produces:
@@ -448,6 +383,34 @@ paths:
             additionalProperties: true
             type: object
       summary: 获取场景的第一张图片
+      tags:
+      - scenes
+      - images
+  /scenes/{id}/images:
+    get:
+      consumes:
+      - application/json
+      description: 获取特定场景下的所有图片列表
+      parameters:
+      - description: 场景ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功获取场景图片
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取场景下的所有图片
       tags:
       - scenes
       - images
@@ -666,7 +629,7 @@ paths:
       parameters:
       - description: 场景ID
         in: formData
-        name: scene_id
+        name: sceneId
         required: true
         type: string
       - description: 要上传的图片文件

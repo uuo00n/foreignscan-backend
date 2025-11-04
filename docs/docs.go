@@ -463,6 +463,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/scenes/{id}/first-image": {
+            "get": {
+                "description": "根据场景ID获取该场景下的第一张图片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "scenes",
+                    "images"
+                ],
+                "summary": "获取场景的第一张图片",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取场景第一张图片",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "场景不存在或没有图片",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/scenes/{id}/images": {
             "get": {
                 "description": "获取特定场景下的所有图片列表",
@@ -489,61 +544,6 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "成功获取场景图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/{scene_id}/first-image": {
-            "get": {
-                "description": "根据场景ID获取该场景下的第一张图片",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes",
-                    "images"
-                ],
-                "summary": "获取场景的第一张图片",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "scene_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功获取场景第一张图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "场景不存在或没有图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -847,7 +847,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "场景ID",
-                        "name": "scene_id",
+                        "name": "sceneId",
                         "in": "formData",
                         "required": true
                     },

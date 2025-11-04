@@ -204,12 +204,12 @@ func GetSceneImages(c *gin.Context) {
 // @Tags scenes,images
 // @Accept json
 // @Produce json
-// @Param scene_id path string true "场景ID"
+// @Param id path string true "场景ID"
 // @Success 200 {object} map[string]interface{} "成功获取场景第一张图片"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Failure 404 {object} map[string]interface{} "场景不存在或没有图片"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
-// @Router /scenes/{scene_id}/first-image [get]
+// @Router /scenes/{id}/first-image [get]
 func GetSceneFirstImage(c *gin.Context) {
 	// 从URL获取场景ID
 	sceneIDStr := c.Param("id")

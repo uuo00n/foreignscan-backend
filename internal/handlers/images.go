@@ -199,13 +199,13 @@ func GetSceneImages(c *gin.Context) {
 }
 
 // GetSceneFirstImage godoc
-// @Summary 获取场景的第一张图片
-// @Description 根据场景ID获取该场景下的第一张图片
+// @Summary 获取场景的最新图片
+// @Description 根据场景ID获取该场景下的最新图片（按createdAt降序取第一条）
 // @Tags scenes,images
 // @Accept json
 // @Produce json
 // @Param id path string true "场景ID"
-// @Success 200 {object} map[string]interface{} "成功获取场景第一张图片"
+// @Success 200 {object} map[string]interface{} "成功获取场景最新图片"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Failure 404 {object} map[string]interface{} "场景不存在或没有图片"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
@@ -224,12 +224,12 @@ func GetSceneFirstImage(c *gin.Context) {
 		return
 	}
 
-	// 查找该场景下的第一张图片（按序列号排序）
-	image, err := models.FindFirstBySceneID(sceneID)
+    // 查找该场景下的最新一张图片（按createdAt降序）
+    image, err := models.FindFirstBySceneID(sceneID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "获取场景第一张图片失败: " + err.Error(),
+        "message": "获取场景最新图片失败: " + err.Error(),
 		})
 		return
 	}
@@ -238,7 +238,7 @@ func GetSceneFirstImage(c *gin.Context) {
 	if image == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"message": "该场景下没有图片",
+        "message": "该场景下没有图片",
 		})
 		return
 	}
@@ -250,17 +250,17 @@ func GetSceneFirstImage(c *gin.Context) {
 }
 
 // GetAllScenesFirstImage godoc
-// @Summary 获取所有场景的第一张图片
-// @Description 获取系统中所有场景的第一张图片，用于场景预览展示
+// @Summary 获取所有场景的最新图片
+// @Description 获取系统中所有场景的最新图片（按createdAt降序取第一条），用于场景预览展示
 // @Tags scenes,images
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]interface{} "成功获取所有场景的第一张图片"
+// @Success 200 {object} map[string]interface{} "成功获取所有场景的最新图片"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /scenes/all/first-images [get]
 func GetAllScenesFirstImage(c *gin.Context) {
-	// 获取所有场景
-	scenes, err := models.FindAllScenes()
+    // 获取所有场景
+    scenes, err := models.FindAllScenes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -278,18 +278,18 @@ func GetAllScenesFirstImage(c *gin.Context) {
 
 	result := make([]SceneWithFirstImage, 0, len(scenes))
 
-	// 遍历所有场景，获取每个场景的第一张图片
-	for _, scene := range scenes {
-		// 查找该场景下的第一张图片
-		image, _ := models.FindFirstBySceneID(scene.ID)
+    // 遍历所有场景，获取每个场景的最新一张图片（按createdAt降序）
+    for _, scene := range scenes {
+        // 查找该场景下的最新一张图片（按createdAt降序）
+        image, _ := models.FindFirstBySceneID(scene.ID)
 
-		// 添加到结果中（即使没有图片）
-		result = append(result, SceneWithFirstImage{
-			SceneID:    scene.ID,
-			SceneName:  scene.Name,
-			FirstImage: image,
-		})
-	}
+        // 添加到结果中（即使没有图片）
+        result = append(result, SceneWithFirstImage{
+            SceneID:    scene.ID,
+            SceneName:  scene.Name,
+            FirstImage: image,
+        })
+    }
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

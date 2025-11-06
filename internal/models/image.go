@@ -121,27 +121,28 @@ func FindBySceneID(sceneID primitive.ObjectID) ([]Image, error) {
 	return images, nil
 }
 
-// FindFirstBySceneID 根据场景ID查找第一张图片
+// FindFirstBySceneID 根据场景ID查找最新一张图片（按时间）
+// 说明：为了避免sequenceNumber异常导致排序不准确，这里改为按createdAt降序取第一条
 func FindFirstBySceneID(sceneID primitive.ObjectID) (*Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	
-	collection := database.GetCollection("images")
-	
-	// 查询指定场景下的第一张图片（按序列号升序排列）
-	opts := options.FindOne().SetSort(bson.D{{Key: "sequenceNumber", Value: 1}})
-	var image Image
-	err := collection.FindOne(ctx, bson.M{"sceneId": sceneID}, opts).Decode(&image)
-	
-	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
-			// 没有找到图片，返回nil而不是错误
-			return nil, nil
-		}
-		return nil, err
-	}
-	
-	return &image, nil
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    
+    collection := database.GetCollection("images")
+    
+    // 查询指定场景下的最新一张图片（按createdAt降序排列）
+    opts := options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+    var image Image
+    err := collection.FindOne(ctx, bson.M{"sceneId": sceneID}, opts).Decode(&image)
+    
+    if err != nil {
+        if err.Error() == "mongo: no documents in result" {
+            // 没有找到图片，返回nil而不是错误
+            return nil, nil
+        }
+        return nil, err
+    }
+    
+    return &image, nil
 }
 
 // FindByDate 根据日期查找图片

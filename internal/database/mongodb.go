@@ -45,12 +45,14 @@ func Connect() error {
 	
 	// 初始化集合映射
 	collections = make(map[string]*mongo.Collection)
-	
+
 	// 添加所有需要的集合
 	collections["images"] = database.Collection("images")
 	collections["scenes"] = database.Collection("scenes")
 	collections["styleImages"] = database.Collection("styleImages")
-	
+	// 新增YOLO检测结果集合
+	collections["detections"] = database.Collection("detections")
+
 	return nil
 }
 

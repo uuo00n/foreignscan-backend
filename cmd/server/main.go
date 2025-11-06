@@ -153,6 +153,9 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/style-images", handlers.UploadStyleImage)
 		api.PUT("/style-images/:id", handlers.UpdateStyleImage)
 		api.DELETE("/style-images/:id", handlers.DeleteStyleImage)
-
+		// 检测结果相关API
+		api.GET("/images/:id/detections", handlers.GetImageDetections)
+		api.POST("/images/:id/detections", handlers.CreateImageDetection)
+		api.GET("/detections", handlers.QueryDetections)
 	}
 }

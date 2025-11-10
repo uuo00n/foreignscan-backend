@@ -109,6 +109,7 @@ func UploadImage(c *gin.Context) {
 		IsDetected:       false,
 		HasIssue:         false,
 		IssueType:        "",
+		Status:           models.ImageStatusUndetected, // 新上传图片默认状态为“未检测”
 		DetectionResults: []interface{}{},
 		CreatedAt:        now,
 		UpdatedAt:        now,

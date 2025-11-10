@@ -1,19 +1,20 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+    "context"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
 
-	"foreignscan/internal/config"
-	"foreignscan/internal/database"
-	"foreignscan/internal/handlers"
-	"foreignscan/internal/middleware"
+    "foreignscan/internal/config"
+    "foreignscan/internal/database"
+    "foreignscan/internal/handlers"
+    "foreignscan/internal/middleware"
+    "foreignscan/internal/models"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -46,11 +47,20 @@ func main() {
 	// 添加调试日志
 	fmt.Printf("上传目录路径: %s\n", uploadsPath)
 
-	// 初始化数据库连接
-	if err := database.Connect(); err != nil {
-		log.Fatalf("数据库连接失败: %v", err)
-	}
-	defer database.Close()
+    // 初始化数据库连接
+    if err := database.Connect(); err != nil {
+        log.Fatalf("数据库连接失败: %v", err)
+    }
+    defer database.Close()
+
+    // 初始化新表索引（问题表、对比表）
+    // 关键点：仅创建索引，不修改原有数据
+    if err := models.EnsureIssueIndexes(); err != nil {
+        log.Printf("初始化Issue索引失败: %v", err)
+    }
+    if err := models.EnsureComparisonIndexes(); err != nil {
+        log.Printf("初始化Comparison索引失败: %v", err)
+    }
 
 	// 注册路由
 	setupRoutes(r)
@@ -115,8 +125,8 @@ func setupRoutes(r *gin.Engine) {
 	})
 
 	// API路由组
-	api := r.Group("/api")
-	{
+    api := r.Group("/api")
+    {
 		// 获取图片列表
 		api.GET("/images", handlers.GetImages)
 		
@@ -153,9 +163,14 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/style-images", handlers.UploadStyleImage)
 		api.PUT("/style-images/:id", handlers.UpdateStyleImage)
 		api.DELETE("/style-images/:id", handlers.DeleteStyleImage)
-		// 检测结果相关API
-		api.GET("/images/:id/detections", handlers.GetImageDetections)
-		api.POST("/images/:id/detections", handlers.CreateImageDetection)
-		api.GET("/detections", handlers.QueryDetections)
-	}
+        // 检测结果相关API
+        api.GET("/images/:id/detections", handlers.GetImageDetections)
+        api.POST("/images/:id/detections", handlers.CreateImageDetection)
+        api.GET("/detections", handlers.QueryDetections)
+
+        // 新增：问题相关API
+        handlers.RegisterIssueRoutes(api)
+        // 新增：对比相关API
+        handlers.RegisterComparisonRoutes(api)
+    }
 }

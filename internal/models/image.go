@@ -13,20 +13,28 @@ import (
 
 // Image 图片模型
 type Image struct {
-	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	SequenceNumber   int                `bson:"sequenceNumber" json:"sequenceNumber"`
-	SceneID          primitive.ObjectID `bson:"sceneId" json:"sceneId"`           // 关联的场景ID
-	Timestamp        time.Time          `bson:"timestamp" json:"timestamp"`
-	Location         string             `bson:"location" json:"location"`
-	Filename         string             `bson:"filename" json:"filename"`
-	Path             string             `bson:"path" json:"path"`
-	IsDetected       bool               `bson:"isDetected" json:"isDetected"`
-	HasIssue         bool               `bson:"hasIssue" json:"hasIssue"`
-	IssueType        string             `bson:"issueType" json:"issueType"`
-	DetectionResults []interface{}      `bson:"detectionResults" json:"detectionResults"`
-	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`       // 创建时间
-	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`       // 更新时间
+    ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+    SequenceNumber   int                `bson:"sequenceNumber" json:"sequenceNumber"`
+    SceneID          primitive.ObjectID `bson:"sceneId" json:"sceneId"`           // 关联的场景ID
+    Timestamp        time.Time          `bson:"timestamp" json:"timestamp"`
+    Location         string             `bson:"location" json:"location"`
+    Filename         string             `bson:"filename" json:"filename"`
+    Path             string             `bson:"path" json:"path"`
+    IsDetected       bool               `bson:"isDetected" json:"isDetected"`
+    HasIssue         bool               `bson:"hasIssue" json:"hasIssue"`
+    IssueType        string             `bson:"issueType" json:"issueType"`
+    Status           string             `bson:"status" json:"status"`               // 图片检测状态：未检测/合格/缺陷
+    DetectionResults []interface{}      `bson:"detectionResults" json:"detectionResults"`
+    CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`       // 创建时间
+    UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`       // 更新时间
 }
+
+// 定义图片状态常量，避免魔法字符串
+const (
+    ImageStatusUndetected = "未检测"
+    ImageStatusQualified  = "合格"
+    ImageStatusDefective  = "缺陷"
+)
 
 // GetNextSequence 获取下一个序列号
 func GetNextSequence() (int, error) {

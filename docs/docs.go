@@ -24,6 +24,182 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/comparisons": {
+            "get": {
+                "description": "支持按图片ID或检测运行ID筛选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comparisons"
+                ],
+                "summary": "查询对比记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "imageId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "检测运行ID",
+                        "name": "detectionRunId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "保存源图与处理后图路径，并可选保存差异信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comparisons"
+                ],
+                "summary": "创建处理前后对比记录",
+                "parameters": [
+                    {
+                        "description": "对比信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateComparisonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/detections": {
+            "get": {
+                "description": "支持按场景、时间范围、是否有问题、类别等条件筛选检测运行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "查询检测结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "sceneId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否存在问题",
+                        "name": "hasIssue",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "目标类别名称筛选",
+                        "name": "class",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（YYYY-MM-DD）",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（YYYY-MM-DD）",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功查询检测结果",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/images": {
             "get": {
                 "description": "获取系统中所有图片的列表",
@@ -196,6 +372,259 @@ const docTemplate = `{
                 }
             }
         },
+        "/images/{id}/detections": {
+            "get": {
+                "description": "根据图片ID获取所有检测运行结果（按创建时间倒序）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "获取图片的检测结果列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功获取检测结果",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "YOLO推理完成后，向后端写入一次检测运行结果；支持RunID幂等插入，自动更新图片摘要字段",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "写入图片的检测结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "检测结果请求体",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateDetectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "成功写入检测结果",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/images/{id}/issues": {
+            "get": {
+                "description": "根据图片ID获取对应问题列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issues"
+                ],
+                "summary": "获取单个图片的所有问题",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/issues": {
+            "get": {
+                "description": "支持按场景、图片、问题类型筛选",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issues"
+                ],
+                "summary": "查询问题列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "sceneId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "imageId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "问题类型",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "新建问题，包含问题类型和说明；自动补充sceneId",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issues"
+                ],
+                "summary": "创建问题记录",
+                "parameters": [
+                    {
+                        "description": "问题信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateIssueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "图片不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/scenes": {
             "get": {
                 "description": "获取系统中所有可用的场景列表",
@@ -277,7 +706,7 @@ const docTemplate = `{
         },
         "/scenes/all/first-images": {
             "get": {
-                "description": "获取系统中所有场景的第一张图片，用于场景预览展示",
+                "description": "获取系统中所有场景的最新图片（按createdAt降序取第一条），用于场景预览展示",
                 "consumes": [
                     "application/json"
                 ],
@@ -288,10 +717,10 @@ const docTemplate = `{
                     "scenes",
                     "images"
                 ],
-                "summary": "获取所有场景的第一张图片",
+                "summary": "获取所有场景的最新图片",
                 "responses": {
                     "200": {
-                        "description": "成功获取所有场景的第一张图片",
+                        "description": "成功获取所有场景的最新图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -465,7 +894,7 @@ const docTemplate = `{
         },
         "/scenes/{id}/first-image": {
             "get": {
-                "description": "根据场景ID获取该场景下的第一张图片",
+                "description": "根据场景ID获取该场景下的最新图片（按createdAt降序取第一条）",
                 "consumes": [
                     "application/json"
                 ],
@@ -476,7 +905,7 @@ const docTemplate = `{
                     "scenes",
                     "images"
                 ],
-                "summary": "获取场景的第一张图片",
+                "summary": "获取场景的最新图片",
                 "parameters": [
                     {
                         "type": "string",
@@ -488,7 +917,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功获取场景第一张图片",
+                        "description": "成功获取场景最新图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -886,6 +1315,109 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.CreateComparisonRequest": {
+            "type": "object",
+            "properties": {
+                "afterPath": {
+                    "description": "处理后图片路径（必填）",
+                    "type": "string"
+                },
+                "beforePath": {
+                    "description": "处理前图片路径（必填）",
+                    "type": "string"
+                },
+                "detectionRunId": {
+                    "description": "可选：检测运行ID",
+                    "type": "string"
+                },
+                "diffInfo": {
+                    "description": "差异信息（可选）"
+                },
+                "imageId": {
+                    "description": "图片ID（必填）",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注（可选）",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.CreateDetectionRequest": {
+            "type": "object",
+            "properties": {
+                "confidenceThreshold": {
+                    "type": "number"
+                },
+                "device": {
+                    "type": "string"
+                },
+                "inferenceTimeMs": {
+                    "type": "integer"
+                },
+                "iouThreshold": {
+                    "type": "number"
+                },
+                "items": {
+                    "description": "检测项",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.DetectionItem"
+                    }
+                },
+                "modelName": {
+                    "type": "string"
+                },
+                "modelVersion": {
+                    "type": "string"
+                },
+                "processedFilename": {
+                    "type": "string"
+                },
+                "processedPath": {
+                    "type": "string"
+                },
+                "runId": {
+                    "description": "可选：运行ID，用于幂等",
+                    "type": "string"
+                },
+                "sourceFilename": {
+                    "type": "string"
+                },
+                "sourcePath": {
+                    "type": "string"
+                },
+                "summary": {
+                    "description": "汇总信息（是否有问题等）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.DetectionSummary"
+                        }
+                    ]
+                }
+            }
+        },
+        "handlers.CreateIssueRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "问题说明（可选）",
+                    "type": "string"
+                },
+                "detectionRunId": {
+                    "description": "可选：关联的检测运行ID",
+                    "type": "string"
+                },
+                "imageId": {
+                    "description": "图片ID（必填）",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "问题类型（必填）",
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -894,6 +1426,95 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "models.BoundingBox": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "description": "高度（像素）",
+                    "type": "number"
+                },
+                "width": {
+                    "description": "宽度（像素）",
+                    "type": "number"
+                },
+                "x": {
+                    "description": "左上角X（像素）",
+                    "type": "number"
+                },
+                "y": {
+                    "description": "左上角Y（像素）",
+                    "type": "number"
+                }
+            }
+        },
+        "models.DetectionItem": {
+            "type": "object",
+            "properties": {
+                "bbox": {
+                    "description": "边界框",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.BoundingBox"
+                        }
+                    ]
+                },
+                "class": {
+                    "description": "目标类别名称",
+                    "type": "string"
+                },
+                "classId": {
+                    "description": "目标类别ID（如YOLO的类别索引）",
+                    "type": "integer"
+                },
+                "confidence": {
+                    "description": "置信度",
+                    "type": "number"
+                },
+                "note": {
+                    "description": "可选备注（比如规则命中说明）",
+                    "type": "string"
+                },
+                "polygon": {
+                    "description": "可选的分割多边形",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PolygonPoint"
+                    }
+                }
+            }
+        },
+        "models.DetectionSummary": {
+            "type": "object",
+            "properties": {
+                "avgScore": {
+                    "description": "平均置信度（便于排序/筛选）",
+                    "type": "number"
+                },
+                "hasIssue": {
+                    "description": "是否存在问题",
+                    "type": "boolean"
+                },
+                "issueType": {
+                    "description": "问题类型（业务定义）",
+                    "type": "string"
+                },
+                "objectCount": {
+                    "description": "检测到的目标数量",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.PolygonPoint": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
                 }
             }
         },

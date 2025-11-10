@@ -226,6 +226,64 @@ func FindByDateAndSceneID(date time.Time, sceneID primitive.ObjectID) ([]Image, 
 	return images, nil
 }
 
+// FindByStatus 根据状态筛选图片
+// 参数：
+// - status: 图片状态（合格/缺陷/未检测）
+// 返回：满足条件的图片列表，按创建时间降序
+func FindByStatus(status string) ([]Image, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    collection := database.GetCollection("images")
+
+    // 按创建时间降序排列
+    opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+    cursor, err := collection.Find(ctx, bson.M{"status": status}, opts)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var images []Image
+    if err := cursor.All(ctx, &images); err != nil {
+        return nil, err
+    }
+    return images, nil
+}
+
+// FindByStatusAndTimeRange 根据状态与时间范围筛选图片
+// 参数：
+// - status: 图片状态（合格/缺陷/未检测）
+// - start: 起始时间（包含）
+// - end: 结束时间（包含）
+// 返回：满足条件的图片列表，按创建时间降序
+func FindByStatusAndTimeRange(status string, start, end time.Time) ([]Image, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    collection := database.GetCollection("images")
+
+    filter := bson.M{
+        "status": status,
+        "createdAt": bson.M{
+            "$gte": start,
+            "$lte": end,
+        },
+    }
+    opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+    cursor, err := collection.Find(ctx, filter, opts)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var images []Image
+    if err := cursor.All(ctx, &images); err != nil {
+        return nil, err
+    }
+    return images, nil
+}
+
 // Save 保存图片
 func (i *Image) Save() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

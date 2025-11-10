@@ -533,6 +533,46 @@ paths:
       summary: 根据日期和场景ID获取图片
       tags:
       - images
+  /images/filter:
+    get:
+      consumes:
+      - application/json
+      description: 按状态（必填）与可选的时间范围（start/end）筛选图片。时间格式支持 YYYY-MM-DD 或 RFC3339（如 2025-11-10T15:00:00Z）。
+      parameters:
+      - description: 状态（合格/缺陷/未检测）
+        in: query
+        name: status
+        required: true
+        type: string
+      - description: 起始时间（YYYY-MM-DD 或 RFC3339）
+        in: query
+        name: start
+        type: string
+      - description: 结束时间（YYYY-MM-DD 或 RFC3339）
+        in: query
+        name: end
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功获取筛选结果
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 根据状态或状态+时间范围筛选图片
+      tags:
+      - images
   /issues:
     get:
       consumes:

@@ -138,6 +138,9 @@ func setupRoutes(r *gin.Engine) {
 		
 		// 根据日期和场景ID获取图片
 		api.GET("/images/by-date-scene", handlers.GetImagesByDateAndScene)
+
+		// 新增：根据状态或状态+时间范围筛选图片
+		api.GET("/images/filter", handlers.GetImagesByStatusTime)
 		
 		// 上传图片
 		api.POST("/upload", handlers.UploadImage)

@@ -294,7 +294,7 @@ func main() {
     flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
     flag.StringVar(&imagesDir, "images-dir", "./uploads/images", "图片目录路径（仅 full-init 模式使用）")
     flag.StringVar(&stylesDir, "styles-dir", "./uploads/styles", "样式图目录路径（仅 full-init 模式使用）")
-    flag.StringVar(&mode, "mode", "full-init", "运行模式：full-init（重建并导入）或 augment-existing（增补缺失数据）")
+    flag.StringVar(&mode, "mode", "full-init", "运行模式：full-init（重建并导入）或 augment-existing（增补缺失数据）或 structure-only（仅初始化集合与索引）")
     flag.BoolVar(&dryRun, "dry-run", false, "增补模式下仅打印计划，不写入数据库")
     flag.IntVar(&limit, "limit", 0, "增补模式下处理的图片数量上限（0 表示不限制）")
     flag.Parse()
@@ -303,7 +303,7 @@ func main() {
         fmt.Println("=== 数据库初始化工具 ===")
         mongoURI = getUserInput("MongoDB连接URI", mongoURI)
         dbName = getUserInput("数据库名称", dbName)
-        mode = strings.ToLower(getUserInput("运行模式 (full-init / augment-existing)", mode))
+        mode = strings.ToLower(getUserInput("运行模式 (full-init / augment-existing / structure-only)", mode))
 
         // 根据模式分别收集参数
         if mode == "full-init" {
@@ -331,8 +331,13 @@ func main() {
             fmt.Printf("运行模式: %s\n", mode)
             fmt.Printf("dry-run: %v\n", dryRun)
             fmt.Printf("limit: %d\n", limit)
+        } else if mode == "structure-only" {
+            fmt.Println("\n=== 初始化配置 ===")
+            fmt.Printf("MongoDB URI: %s\n", mongoURI)
+            fmt.Printf("数据库名称: %s\n", dbName)
+            fmt.Printf("运行模式: %s\n", mode)
         } else {
-            log.Fatalf("无效的运行模式: %s。请使用 full-init 或 augment-existing", mode)
+            log.Fatalf("无效的运行模式: %s。请使用 full-init / augment-existing / structure-only", mode)
         }
 
         if !getUserConfirmation("\n确认以上配置并继续？", true) {
@@ -350,14 +355,32 @@ func main() {
 
     ctx := context.Background()
 
-    // 创建索引（两种模式都需要）
+    // 创建索引（所有模式都需要）
     if err := models.EnsureIssueIndexes(); err != nil {
         log.Fatalf("创建 Issue 索引失败: %v", err)
     }
     if err := models.EnsureComparisonIndexes(); err != nil {
         log.Fatalf("创建 Comparison 索引失败: %v", err)
     }
-    fmt.Println("已确保 issues/comparisons 索引")
+    if err := models.EnsureDetectionIndexes(); err != nil {
+        log.Fatalf("创建 Detection 索引失败: %v", err)
+    }
+    fmt.Println("已确保 issues/comparisons/detections 索引")
+
+    if mode == "structure-only" {
+        // 仅初始化集合，不进行任何数据导入或增补
+        collections := []string{"scenes", "styleImages", "images", "issues", "comparisons", "detections"}
+        for _, coll := range collections {
+            if err := database.GetDatabase().CreateCollection(ctx, coll); err != nil {
+                // 如果集合已存在，CreateCollection 会报错，此处仅提示
+                log.Printf("创建集合 %s 提示: %v", coll, err)
+            } else {
+                log.Printf("已创建集合: %s", coll)
+            }
+        }
+        fmt.Println("仅结构初始化完成（集合与基本索引）。")
+        return
+    }
 
     if mode == "augment-existing" {
         // 增补模式：不清理集合，不读文件，仅为现有图片补数据

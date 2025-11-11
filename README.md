@@ -72,36 +72,171 @@ go mod download
 
 ### 初始化数据库
 
-项目提供了数据库初始化脚本，可以通过以下命令运行：
+scripts/init-db.go 提供三种模式以适配不同场景：
+
+- full-init：清空并初始化数据库结构，从文件系统导入 scenes/styleImages/images，且可选在导入后补充缺失的 issues/comparisons 测试数据
+- augment-existing：不清库，仅为现有 images 增补缺失的 issues/comparisons，可选择 dry-run 预览
+- structure-only：只创建集合与基础索引，不导入或增补任何数据，适合在新机器上“只搭结构”
+
+常用示例（非交互模式）：
+
+```bash
+# 1) 仅初始化结构（不导数据）
+go run scripts/init-db.go -mode=structure-only -interactive=false -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan"
+
+# 2) 全量初始化（导入文件系统数据 + 可选补充测试数据）
+# 根据你的实际目录选择 images-dir/styles-dir，默认使用 ./uploads/images 与 ./uploads/styles
+go run scripts/init-db.go -mode=full-init -interactive=false \
+  -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan" \
+  -images-dir="./uploads/images" -styles-dir="./uploads/styles" \
+  -seed-extra=true
+
+# 3) 增补现有数据（只为缺失的 issues/comparisons 补数据）
+go run scripts/init-db.go -mode=augment-existing -interactive=false \
+  -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan" \
+  -dry-run=true -limit=100
+```
+
+交互模式：
 
 ```bash
 go run scripts/init-db.go
 ```
 
-脚本支持以下命令行参数：
+- 运行后按提示选择模式与参数；当选择 structure-only 时，只进行集合与索引初始化
 
-| 参数            | 说明             | 默认值                    |
-| --------------- | ---------------- | ------------------------- |
-| `--test-data`   | 是否插入测试数据 | false                     |
-| `--interactive` | 是否使用交互模式 | true                      |
-| `--mongo-uri`   | MongoDB连接URI   | mongodb://localhost:27017 |
-| `--db-name`     | 数据库名称       | foreignscan               |
-| `--uploads-dir` | 上传目录路径     | ./uploads                 |
+可用参数说明：
 
-示例：
+- -mode：运行模式，可选 full-init | augment-existing | structure-only（必选，交互模式下会提示选择）
+- -interactive：是否交互模式，默认 true；设为 false 使用命令行参数直接运行
+- -mongo-uri：MongoDB 连接 URI，默认 mongodb://localhost:27017
+- -db-name：数据库名称，默认 foreignscan
+- -images-dir：图片数据目录（仅 full-init 使用），默认 ./uploads/images
+- -styles-dir：样式图目录（仅 full-init 使用），默认 ./uploads/styles
+- -seed-extra：是否在 full-init 导入后补充缺失的 issues/comparisons 测试数据（仅 full-init 使用），默认 false
+- -dry-run：仅打印计划操作而不写库（仅 augment-existing 使用），默认 false
+- -limit：最多处理多少条 images（仅 augment-existing 使用），默认 0 表示无限制
+
+注意事项：
+
+- structure-only 模式不会删除任何数据，也不会导入/增补数据，只保证基础集合与索引存在
+- full-init 模式会清理相关集合后再导入，请谨慎在生产环境使用
+- 如果你的数据目录在 cmd/server/uploads 下，请将 -images-dir/-styles-dir 指向对应子目录；也可以使用绝对路径
+
+### 数据导入/恢复（使用 mongorestore）
+
+#### macOS（本地开发环境）
+
+如果你已通过 `mongodump` 将数据库导出到 `scripts/data/foreignscan/`，可以使用下列命令进行恢复：
+
+前置：安装 MongoDB 数据库工具（如未安装）
 
 ```bash
-# 不使用交互模式，插入测试数据
-go run scripts/init-db.go --interactive=false --test-data=true
-
-# 不使用交互模式，不插入测试数据
-go run scripts/init-db.go --interactive=false --test-data=false
-
-# 使用自定义数据库名称
-go run scripts/init-db.go --db-name=mydb
+brew tap mongodb/brew && brew install mongodb-database-tools
 ```
 
-### 运行服务
+完整恢复到 foreignscan（不删除现有数据）
+
+```bash
+mongorestore --uri="mongodb://localhost:27017" --db=foreignscan \
+  "/Users/uu/Desktop/dnui-foreignscan/foreignscan-backend/scripts/data/foreignscan"
+```
+
+完整恢复到 foreignscan（覆盖现有集合数据，谨慎使用）
+
+```bash
+mongorestore --uri="mongodb://localhost:27017" --db=foreignscan --drop \
+  "/Users/uu/Desktop/dnui-foreignscan/foreignscan-backend/scripts/data/foreignscan"
+```
+
+仅恢复指定集合（示例：只恢复 images 与 scenes）
+
+```bash
+mongorestore --uri="mongodb://localhost:27017" \
+  --nsInclude foreignscan.images --nsInclude foreignscan.scenes \
+  "/Users/uu/Desktop/dnui-foreignscan/foreignscan-backend/scripts/data/foreignscan"
+```
+
+恢复到其他数据库名（例如 mydb）
+
+```bash
+mongorestore --uri="mongodb://localhost:27017" --db=mydb \
+  "/Users/uu/Desktop/dnui-foreignscan/foreignscan-backend/scripts/data/foreignscan"
+```
+
+说明与注意：
+
+- 导出目录中同时包含 `*.bson` 与 `*.metadata.json`，其中 metadata 中保存了索引定义；默认会恢复索引，若不希望恢复索引，可加 `--noIndexRestore`
+- 如果你的 MongoDB 需要认证，可加上 `--username <user> --password <pass> --authenticationDatabase admin`
+- 恢复后可使用 `mongosh` 验证：
+  - `mongosh` 进入 shell 后执行：
+  - `use foreignscan`
+  - `db.images.countDocuments()`、`db.scenes.countDocuments()` 等命令查看数量
+
+---
+
+提示：Windows 平台的恢复命令请参见下方《Windows 生产环境数据导出/导入方法》章节（含 PowerShell 与 CMD 示例）。
+
+### Windows 生产环境数据导出/导入方法
+
+说明：以下命令同时给出 PowerShell 与 CMD 两种用法。请根据你的环境选择一种即可。
+
+1) 安装 MongoDB Database Tools（包含 mongodump/mongorestore）
+
+- 方案A（推荐，需已安装 Chocolatey）：
+  - 以管理员身份打开 PowerShell 或 CMD，执行：
+  - choco install mongodb-database-tools
+- 方案B（手动）：
+  - 从 MongoDB 官方下载 Database Tools 的 Windows 压缩包（zip），解压后将解压目录下的 bin 路径加入系统 PATH 环境变量；之后新开终端即可使用 mongodump/mongorestore。
+
+2) 导出整库（foreignscan）到项目 scripts/data 目录
+
+- PowerShell 示例：
+  - $OutDir = "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data"
+  - New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+  - mongodump --uri="mongodb://localhost:27017" --db=foreignscan --out="$OutDir"
+
+- CMD 示例：
+  - mkdir C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data
+  - mongodump --uri="mongodb://localhost:27017" --db=foreignscan --out="C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data"
+
+3) 恢复/导入到数据库
+
+- PowerShell：
+  - $DumpDir = "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data\foreignscan"
+  - 不覆盖现有数据：
+    - mongorestore --uri="mongodb://localhost:27017" --db=foreignscan "$DumpDir"
+  - 覆盖现有集合数据（谨慎）：
+    - mongorestore --uri="mongodb://localhost:27017" --db=foreignscan --drop "$DumpDir"
+
+- CMD：
+  - mongorestore --uri="mongodb://localhost:27017" --db=foreignscan "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data\foreignscan"
+  - 覆盖现有集合：
+    - mongorestore --uri="mongodb://localhost:27017" --db=foreignscan --drop "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data\foreignscan"
+
+4) 仅恢复指定集合（例如 images 与 scenes）
+
+- PowerShell：
+  - mongorestore --uri="mongodb://localhost:27017" \
+    --nsInclude foreignscan.images --nsInclude foreignscan.scenes "$DumpDir"
+
+- CMD：
+  - mongorestore --uri="mongodb://localhost:27017" --nsInclude foreignscan.images --nsInclude foreignscan.scenes "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data\foreignscan"
+
+5) 恢复到其它数据库名（例如 mydb）
+
+- mongorestore --uri="mongodb://localhost:27017" --db=mydb "C:\Users\<你的用户名>\Desktop\dnui-foreignscan\foreignscan-backend\scripts\data\foreignscan"
+
+6) 认证与索引相关说明
+
+- 如果需要认证：在命令后追加 --username <user> --password <pass> --authenticationDatabase admin
+- 默认会恢复索引；如不希望恢复索引：追加 --noIndexRestore
+
+7) 常见问题与注意事项
+
+- 路径中包含空格时，请务必使用双引号包裹路径
+- 安装后若命令未找到，确认 Database Tools 的 bin 目录已加入 PATH 并重启终端
+- 如果连接的是远端或 Atlas，可能需要使用 SRV 连接串： --uri="mongodb+srv://<cluster-url>" 并按需追加认证参数
 
 ```bash
 cd cmd/server

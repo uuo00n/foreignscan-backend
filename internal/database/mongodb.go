@@ -12,14 +12,22 @@ import (
 
 var (
 	// 全局数据库连接
-	client     *mongo.Client
-	database   *mongo.Database
+	client      *mongo.Client
+	database    *mongo.Database
 	collections map[string]*mongo.Collection
+	cfg         *config.Config
 )
+
+// SetConfig 设置数据库配置
+func SetConfig(c *config.Config) {
+	cfg = c
+}
 
 // Connect 连接到MongoDB数据库
 func Connect() error {
-	cfg := config.Load()
+	if cfg == nil {
+		cfg = config.Load()
+	}
 	
 	// 设置MongoDB连接选项
 	clientOptions := options.Client().ApplyURI(cfg.MongoURI)

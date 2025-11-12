@@ -7,6 +7,7 @@ import (
     "net/http"
     "os"
     "os/signal"
+    "path/filepath"
     "syscall"
     "time"
 
@@ -38,14 +39,18 @@ func main() {
 		os.Mkdir("uploads", 0755)
 	}
 
-	// 静态文件服务 - 使用相对路径，适合交付到客户环境
-	// 直接使用项目根目录下的uploads文件夹
-	uploadsPath := "./uploads"
-	r.Static("/uploads", uploadsPath)
-	r.Static("/public", "./public")
+    // 静态文件服务 - 使用相对路径，适合交付到客户环境
+    // 直接使用项目根目录下的uploads文件夹
+    uploadsPath := "./uploads"
+    // 确保 labels 目录存在（用于存放处理后的图片与标签）
+    if err := os.MkdirAll(filepath.Join(uploadsPath, "labels"), 0755); err != nil {
+        log.Printf("创建 uploads/labels 目录失败: %v", err)
+    }
+    r.Static("/uploads", uploadsPath)
+    r.Static("/public", "./public")
 	
-	// 添加调试日志
-	fmt.Printf("上传目录路径: %s\n", uploadsPath)
+    // 添加调试日志
+    fmt.Printf("上传目录路径: %s\n", uploadsPath)
 
     // 初始化数据库连接
     if err := database.Connect(); err != nil {
@@ -170,6 +175,15 @@ func setupRoutes(r *gin.Engine) {
         api.GET("/images/:id/detections", handlers.GetImageDetections)
         api.POST("/images/:id/detections", handlers.CreateImageDetection)
         api.GET("/detections", handlers.QueryDetections)
+
+        // 新增：前端一键触发YOLO批量推理 & 任务查询
+        api.POST("/scenes/:id/detect", handlers.StartSceneDetect)
+        // 新增：前端一键触发单图推理
+    api.POST("/images/:id/detect", handlers.StartImageDetect)
+    // 任务管理：取消与实时进度
+    api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
+    api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)
+        api.GET("/detect/jobs/:id", handlers.GetDetectJob)
 
         // 新增：问题相关API
         handlers.RegisterIssueRoutes(api)

@@ -56,13 +56,70 @@ func GetImageDetections(c *gin.Context) {
 		return
 	}
 
-	runs, err := models.FindDetectionsByImageID(oid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
-		return
-	}
+    runs, err := models.FindDetectionsByImageID(oid)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "count": len(runs), "detections": runs})
+    type detectionRunView struct {
+        ID                  primitive.ObjectID      `json:"id"`
+        RunID               string                 `json:"runId,omitempty"`
+        ImageID             primitive.ObjectID      `json:"imageId"`
+        SceneID             primitive.ObjectID      `json:"sceneId"`
+        SourceFilename      string                 `json:"sourceFilename"`
+        SourcePath          string                 `json:"sourcePath"`
+        ProcessedFilename   string                 `json:"processedFilename"`
+        ProcessedPath       string                 `json:"processedPath"`
+        ModelName           string                 `json:"modelName"`
+        ModelVersion        string                 `json:"modelVersion"`
+        Device              string                 `json:"device,omitempty"`
+        IoUThreshold        float64                `json:"iouThreshold"`
+        ConfidenceThreshold float64                `json:"confidenceThreshold"`
+        InferenceTimeMs     int64                  `json:"inferenceTimeMs"`
+        Items               []models.DetectionItem `json:"items"`
+        Summary             models.DetectionSummary `json:"summary"`
+        CreatedAt           time.Time              `json:"createdAt"`
+        UpdatedAt           time.Time              `json:"updatedAt"`
+        SourceURL           string                 `json:"sourceUrl"`
+        ProcessedURL        string                 `json:"processedUrl"`
+    }
+
+    webPath := func(p string) string {
+        if p == "" { return "" }
+        s := strings.ReplaceAll(p, "\\", "/")
+        if !strings.HasPrefix(s, "/") { s = "/" + s }
+        return s
+    }
+
+    views := make([]detectionRunView, 0, len(runs))
+    for _, r := range runs {
+        v := detectionRunView{
+            ID: r.ID,
+            RunID: r.RunID,
+            ImageID: r.ImageID,
+            SceneID: r.SceneID,
+            SourceFilename: r.SourceFilename,
+            SourcePath: r.SourcePath,
+            ProcessedFilename: r.ProcessedFilename,
+            ProcessedPath: r.ProcessedPath,
+            ModelName: r.ModelName,
+            ModelVersion: r.ModelVersion,
+            Device: r.Device,
+            IoUThreshold: r.IoUThreshold,
+            ConfidenceThreshold: r.ConfidenceThreshold,
+            InferenceTimeMs: r.InferenceTimeMs,
+            Items: r.Items,
+            Summary: r.Summary,
+            CreatedAt: r.CreatedAt,
+            UpdatedAt: r.UpdatedAt,
+            SourceURL: webPath(r.SourcePath),
+            ProcessedURL: webPath(r.ProcessedPath),
+        }
+        views = append(views, v)
+    }
+
+    c.JSON(http.StatusOK, gin.H{"success": true, "count": len(views), "detections": views})
 }
 
 // CreateImageDetection godoc

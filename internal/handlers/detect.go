@@ -5,6 +5,7 @@ import (
     "time"
 
     "foreignscan/internal/services"
+    "foreignscan/internal/config"
     "github.com/gin-gonic/gin"
     "go.mongodb.org/mongo-driver/bson/primitive"
     "encoding/json"
@@ -20,6 +21,17 @@ type StartDetectRequest struct {
     Device       string  `json:"device"`       // 设备：cpu/cuda:0/mps，默认空（由YOLO自动选择）
     Conf         float64 `json:"conf"`         // 置信度阈值，默认 0.25
     IoU          float64 `json:"iou"`          // IoU 阈值，默认 0.45
+}
+
+// DetectEntryRequest 兼容前端直接调用 /api/detect 的请求体
+type DetectEntryRequest struct {
+    ImageID      string  `json:"imageId"`
+    Weights      string  `json:"weights"`
+    ModelName    string  `json:"modelName"`
+    ModelVersion string  `json:"modelVersion"`
+    Device       string  `json:"device"`
+    Conf         float64 `json:"conf"`
+    IoU          float64 `json:"iou"`
 }
 
 // StartSceneDetect godoc
@@ -58,6 +70,7 @@ func StartSceneDetect(c *gin.Context) {
         Device:       req.Device,
         Conf:         req.Conf,
         IoU:          req.IoU,
+        ServiceURL:   config.Load().DetectServiceURL,
     })
     if err != nil {
         if strings.Contains(err.Error(), "busy") {
@@ -135,6 +148,7 @@ func StartImageDetect(c *gin.Context) {
         Device:       req.Device,
         Conf:         req.Conf,
         IoU:          req.IoU,
+        ServiceURL:   config.Load().DetectServiceURL,
     })
     if err != nil {
         if strings.Contains(err.Error(), "busy") {
@@ -235,4 +249,55 @@ func GetDetectJobStream(c *gin.Context) {
             return
         }
     }
+}
+
+// DetectEntry godoc
+// @Summary 兼容入口：前端直接传 imageId 触发单图推理
+// @Tags detections
+// @Accept json
+// @Produce json
+// @Param body body DetectEntryRequest true "请求体"
+// @Success 202 {object} map[string]interface{} "任务已启动，返回jobId与初始状态"
+// @Failure 400 {object} map[string]interface{} "请求参数错误"
+// @Router /detect [post]
+func DetectEntry(c *gin.Context) {
+    var req DetectEntryRequest
+    if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.ImageID) == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求体错误或缺少imageId"})
+        return
+    }
+    imageID, err := primitive.ObjectIDFromHex(req.ImageID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的图片ID: " + err.Error()})
+        return
+    }
+    if req.Weights == "" { req.Weights = "yolov8s.pt" }
+    if req.ModelName == "" { req.ModelName = "yolov8" }
+    if req.Conf <= 0 { req.Conf = 0.25 }
+    if req.IoU <= 0 { req.IoU = 0.45 }
+
+    jobID, err := services.StartImageDetect(imageID, services.DetectConfig{
+        Weights:      req.Weights,
+        ModelName:    req.ModelName,
+        ModelVersion: req.ModelVersion,
+        Device:       req.Device,
+        Conf:         req.Conf,
+        IoU:          req.IoU,
+        ServiceURL:   config.Load().DetectServiceURL,
+    })
+    if err != nil {
+        if strings.Contains(err.Error(), "busy") {
+            c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前场景已有进行中的任务"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "启动任务失败: " + err.Error()})
+        }
+        return
+    }
+
+    c.JSON(http.StatusAccepted, gin.H{
+        "success": true,
+        "jobId":   jobID,
+        "status":  "pending",
+        "startedAt": time.Now(),
+    })
 }

@@ -7,23 +7,25 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Port           int    // 服务器端口
-	MongoURI       string // MongoDB连接URI
-	DatabaseName   string // 数据库名称
-	UploadDir      string // 上传目录
-	AllowedOrigins string // 允许的CORS源
+    Port           int    // 服务器端口
+    MongoURI       string // MongoDB连接URI
+    DatabaseName   string // 数据库名称
+    UploadDir      string // 上传目录
+    AllowedOrigins string // 允许的CORS源
+    DetectServiceURL string // YOLO服务地址
 }
 
 // Load 加载配置
 func Load() *Config {
 	// 默认配置
-	cfg := &Config{
-		Port:           3000,
-		MongoURI:       "mongodb://localhost:27017",
-		DatabaseName:   "foreignscan",
-		UploadDir:      "uploads",
-		AllowedOrigins: "*",
-	}
+    cfg := &Config{
+        Port:           3000,
+        MongoURI:       "mongodb://localhost:27017",
+        DatabaseName:   "foreignscan",
+        UploadDir:      "uploads",
+        AllowedOrigins: "*",
+        DetectServiceURL: "http://127.0.0.1:8077",
+    }
 
 	// 从环境变量加载配置（如果存在）
 	if port := os.Getenv("PORT"); port != "" {
@@ -44,9 +46,13 @@ func Load() *Config {
 		cfg.UploadDir = uploadDir
 	}
 
-	if origins := os.Getenv("ALLOWED_ORIGINS"); origins != "" {
-		cfg.AllowedOrigins = origins
-	}
+    if origins := os.Getenv("ALLOWED_ORIGINS"); origins != "" {
+        cfg.AllowedOrigins = origins
+    }
+
+    if svc := os.Getenv("DETECT_SERVICE_URL"); svc != "" {
+        cfg.DetectServiceURL = svc
+    }
 
 	return cfg
 }

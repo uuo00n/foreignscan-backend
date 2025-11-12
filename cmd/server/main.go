@@ -179,7 +179,9 @@ func setupRoutes(r *gin.Engine) {
         // 新增：前端一键触发YOLO批量推理 & 任务查询
         api.POST("/scenes/:id/detect", handlers.StartSceneDetect)
         // 新增：前端一键触发单图推理
-    api.POST("/images/:id/detect", handlers.StartImageDetect)
+        api.POST("/images/:id/detect", handlers.StartImageDetect)
+        // 兼容前端直接调用 /api/detect，传 imageId
+        api.POST("/detect", handlers.DetectEntry)
     // 任务管理：取消与实时进度
     api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
     api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)

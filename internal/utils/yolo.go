@@ -83,13 +83,12 @@ func ParseYOLOLabelsToItems(labelPath, imgPath string) ([]models.DetectionItem, 
 // - "labels/scene/xxx.jpg"          -> "uploads/labels/scene/xxx.jpg"
 // - "uploads/labels/scene/xxx.txt"  -> "uploads/labels/scene/xxx.txt"（保持不变）
 func NormalizeUploadsLocalPath(p string) string {
-	cleaned := filepath.Clean(strings.TrimPrefix(p, "/"))
-	// 如果已经以 uploads 前缀开头，则直接返回
-	if strings.HasPrefix(cleaned, "uploads"+string(os.PathSeparator)) || cleaned == "uploads" {
-		return cleaned
-	}
-	// 其他情况，统一加上 uploads 前缀
-	return filepath.Join("uploads", cleaned)
+    cleaned := filepath.Clean(strings.TrimPrefix(p, "/"))
+    cleaned = strings.ReplaceAll(cleaned, "/", string(os.PathSeparator))
+    if strings.HasPrefix(cleaned, "uploads"+string(os.PathSeparator)) || cleaned == "uploads" {
+        return cleaned
+    }
+    return filepath.Join("uploads", cleaned)
 }
 
 // ClassNameFromID 简单的类别ID到名称映射（示例）

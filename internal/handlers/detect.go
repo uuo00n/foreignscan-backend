@@ -5,6 +5,7 @@ import (
     "time"
 
     "foreignscan/internal/services"
+    "foreignscan/internal/config"
     "github.com/gin-gonic/gin"
     "go.mongodb.org/mongo-driver/bson/primitive"
     "encoding/json"
@@ -58,6 +59,7 @@ func StartSceneDetect(c *gin.Context) {
         Device:       req.Device,
         Conf:         req.Conf,
         IoU:          req.IoU,
+        ServiceURL:   config.Load().DetectServiceURL,
     })
     if err != nil {
         if strings.Contains(err.Error(), "busy") {
@@ -135,6 +137,7 @@ func StartImageDetect(c *gin.Context) {
         Device:       req.Device,
         Conf:         req.Conf,
         IoU:          req.IoU,
+        ServiceURL:   config.Load().DetectServiceURL,
     })
     if err != nil {
         if strings.Contains(err.Error(), "busy") {

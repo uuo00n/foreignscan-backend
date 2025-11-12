@@ -1,8 +1,11 @@
 package services
 
 import (
+    "bytes"
     "context"
+    "encoding/json"
     "fmt"
+    "net/http"
     "os"
     "os/exec"
     "path/filepath"
@@ -23,6 +26,7 @@ type DetectConfig struct {
     Device      string  // 设备：cpu/cuda:0/mps 等
     Conf        float64 // 置信度阈值
     IoU         float64 // IoU阈值
+    ServiceURL  string
 }
 
 // DetectJob 批量推理任务
@@ -192,12 +196,147 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
         // 创建输出目录（后续YOLO也会创建，但这里先确保父目录存在）
         _ = os.MkdirAll(jobDir, 0o755)
 
-        // 步骤2：运行 YOLO CLI（前端无需命令行，后端内部调用）
+        if cfg.ServiceURL != "" {
+            job.Status = "running"
+            job.Message = "正在调用服务推理"
+            GetJobManager().SetJob(job)
+
+            entries, err := os.ReadDir(sourceDir)
+            if err != nil {
+                job.Status = "failed"
+                job.Error = fmt.Sprintf("读取源目录失败: %v", err)
+                t := time.Now(); job.EndedAt = &t
+                GetJobManager().SetJob(job)
+                GetJobManager().ReleaseScene(sceneID, jobID)
+                return
+            }
+            job.Total = len(entries)
+            GetJobManager().SetJob(job)
+
+            images, err := models.FindBySceneID(sceneID)
+            if err != nil {
+                job.Status = "failed"
+                job.Error = fmt.Sprintf("查询图片失败: %v", err)
+                t := time.Now(); job.EndedAt = &t
+                GetJobManager().SetJob(job)
+                GetJobManager().ReleaseScene(sceneID, jobID)
+                return
+            }
+            nameToImage := make(map[string]models.Image, len(images))
+            for _, im := range images {
+                nameToImage[strings.TrimSpace(im.Filename)] = im
+            }
+
+            for _, e := range entries {
+                if job.ctx.Err() != nil {
+                    job.Status = "canceled"
+                    job.Canceled = true
+                    t := time.Now(); job.EndedAt = &t
+                    GetJobManager().SetJob(job)
+                    GetJobManager().ReleaseScene(sceneID, jobID)
+                    return
+                }
+                if e.IsDir() { continue }
+                ext := strings.ToLower(filepath.Ext(e.Name()))
+                if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".bmp" { continue }
+
+                im, ok := nameToImage[e.Name()]
+                if !ok {
+                    base := strings.TrimSuffix(e.Name(), ext)
+                    if img, ok2 := nameToImage[base+".jpg"]; ok2 { im = img; ok = true }
+                    if !ok { if img, ok3 := nameToImage[base+".png"]; ok3 { im = img; ok = true } }
+                    if !ok { if img, ok4 := nameToImage[base+".jpeg"]; ok4 { im = img; ok = true } }
+                    if !ok { if img, ok5 := nameToImage[base+".bmp"]; ok5 { im = img; ok = true } }
+                }
+                if !ok {
+                    job.Message = fmt.Sprintf("跳过未匹配文件: %s", e.Name())
+                    GetJobManager().SetJob(job)
+                    continue
+                }
+
+                sourcePath := filepath.Join("uploads", "images", sceneHex, im.Filename)
+
+                reqBody := map[string]interface{}{
+                    "image_path": utils.NormalizeUploadsLocalPath(sourcePath),
+                    "model_path": cfg.Weights,
+                    "conf": cfg.Conf,
+                    "iou": cfg.IoU,
+                }
+                b, _ := json.Marshal(reqBody)
+                start := time.Now()
+                resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/detect", "application/json", bytes.NewReader(b))
+                if err != nil {
+                    job.Message = fmt.Sprintf("服务调用失败 %s: %v", e.Name(), err)
+                    GetJobManager().SetJob(job)
+                    continue
+                }
+                var dr struct{
+                    Success bool `json:"success"`
+                    Items []struct{
+                        ClassId int `json:"classId"`
+                        Class_ string `json:"class_"`
+                        Confidence float64 `json:"confidence"`
+                        Bbox struct{ X float64 `json:"x"`; Y float64 `json:"y"`; Width float64 `json:"width"`; Height float64 `json:"height"` } `json:"bbox"`
+                    } `json:"items"`
+                    Summary struct{ HasIssue bool `json:"hasIssue"`; IssueType string `json:"issueType"`; ObjectCount int `json:"objectCount"`; AvgScore float64 `json:"avgScore"` } `json:"summary"`
+                }
+                _ = json.NewDecoder(resp.Body).Decode(&dr)
+                _ = resp.Body.Close()
+                if !dr.Success {
+                    job.Message = "服务返回失败"
+                    GetJobManager().SetJob(job)
+                    continue
+                }
+
+                items := make([]models.DetectionItem, 0, len(dr.Items))
+                for _, it := range dr.Items {
+                    items = append(items, models.DetectionItem{
+                        Class: it.Class_,
+                        ClassID: it.ClassId,
+                        Confidence: it.Confidence,
+                        BBox: models.BoundingBox{X: it.Bbox.X, Y: it.Bbox.Y, Width: it.Bbox.Width, Height: it.Bbox.Height},
+                    })
+                }
+                run := &models.DetectionRun{
+                    RunID:               jobID+":"+im.Filename,
+                    ImageID:             im.ID,
+                    SceneID:             sceneID,
+                    SourceFilename:      im.Filename,
+                    SourcePath:          sourcePath,
+                    ProcessedFilename:   im.Filename,
+                    ProcessedPath:       sourcePath,
+                    ModelName:           cfg.ModelName,
+                    ModelVersion:        cfg.ModelVersion,
+                    Device:              cfg.Device,
+                    IoUThreshold:        cfg.IoU,
+                    ConfidenceThreshold: cfg.Conf,
+                    InferenceTimeMs:     time.Since(start).Milliseconds(),
+                    Items:               items,
+                    Summary:             models.DetectionSummary{HasIssue: dr.Summary.HasIssue, IssueType: dr.Summary.IssueType, ObjectCount: dr.Summary.ObjectCount, AvgScore: dr.Summary.AvgScore},
+                    CreatedAt:           time.Now(),
+                    UpdatedAt:           time.Now(),
+                }
+                if _, err := models.InsertDetectionRun(run); err != nil {
+                    job.Message = fmt.Sprintf("写库失败 %s: %v", e.Name(), err)
+                    GetJobManager().SetJob(job)
+                    continue
+                }
+                job.Progress++
+                GetJobManager().SetJob(job)
+            }
+
+            job.Status = "completed"
+            job.Message = "任务完成"
+            t := time.Now(); job.EndedAt = &t
+            GetJobManager().SetJob(job)
+            GetJobManager().ReleaseScene(sceneID, jobID)
+            return
+        }
+
         job.Status = "running"
         job.Message = "正在运行YOLO推理"
         GetJobManager().SetJob(job)
 
-        // 构造命令参数
         args := []string{"detect", "predict",
             fmt.Sprintf("model=%s", cfg.Weights),
             fmt.Sprintf("source=%s", sourceDir),
@@ -211,9 +350,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
             args = append(args, fmt.Sprintf("device=%s", cfg.Device))
         }
         cmd := exec.CommandContext(job.ctx, "yolo", args...)
-        // 收集简短输出用于调试（可扩展保存到日志）
         if out, err := cmd.CombinedOutput(); err != nil {
-            // 判断是否为取消导致的错误
             if job.ctx.Err() != nil {
                 job.Status = "canceled"
                 job.Canceled = true
@@ -225,12 +362,10 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
             }
             t := time.Now(); job.EndedAt = &t
             GetJobManager().SetJob(job)
-            // 释放场景锁
             GetJobManager().ReleaseScene(sceneID, jobID)
             return
         }
 
-        // 步骤3：解析生成的标签并写库
         job.Status = "parsing"
         job.Message = "解析标签并写入数据库"
         GetJobManager().SetJob(job)
@@ -338,7 +473,11 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
                 CreatedAt:           time.Now(),
                 UpdatedAt:           time.Now(),
             }
-            _, _ = models.InsertDetectionRun(run)
+            if _, err := models.InsertDetectionRun(run); err != nil {
+                job.Message = fmt.Sprintf("写库失败 %s: %v", e.Name(), err)
+                GetJobManager().SetJob(job)
+                continue
+            }
 
             job.Progress++
             GetJobManager().SetJob(job)
@@ -421,7 +560,74 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
         jobDir := filepath.Join(projectDir, sceneHex)
         _ = os.MkdirAll(jobDir, 0o755)
 
-        // 运行 YOLO CLI
+        if cfg.ServiceURL != "" {
+            job.Status = "running"
+            job.Message = "正在调用服务推理(单图)"
+            GetJobManager().SetJob(job)
+
+            reqBody := map[string]interface{}{
+                "image_path": utils.NormalizeUploadsLocalPath(sourcePath),
+                "model_path": cfg.Weights,
+                "conf": cfg.Conf,
+                "iou": cfg.IoU,
+            }
+            b, _ := json.Marshal(reqBody)
+            start := time.Now()
+            resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/detect", "application/json", bytes.NewReader(b))
+            if err != nil {
+                job.Status = "failed"
+                job.Error = fmt.Sprintf("服务调用失败: %v", err)
+                t := time.Now(); job.EndedAt = &t
+                GetJobManager().SetJob(job)
+                GetJobManager().ReleaseScene(im.SceneID, jobID)
+                return
+            }
+            var dr struct{
+                Success bool `json:"success"`
+                Items []struct{
+                    ClassId int `json:"classId"`
+                    Class_ string `json:"class_"`
+                    Confidence float64 `json:"confidence"`
+                    Bbox struct{ X float64 `json:"x"`; Y float64 `json:"y"`; Width float64 `json:"width"`; Height float64 `json:"height"` } `json:"bbox"`
+                } `json:"items"`
+                Summary struct{ HasIssue bool `json:"hasIssue"`; IssueType string `json:"issueType"`; ObjectCount int `json:"objectCount"`; AvgScore float64 `json:"avgScore"` } `json:"summary"`
+            }
+            _ = json.NewDecoder(resp.Body).Decode(&dr)
+            _ = resp.Body.Close()
+            if !dr.Success {
+                job.Status = "failed"
+                job.Error = "服务返回失败"
+                t := time.Now(); job.EndedAt = &t
+                GetJobManager().SetJob(job)
+                GetJobManager().ReleaseScene(im.SceneID, jobID)
+                return
+            }
+
+            items := make([]models.DetectionItem, 0, len(dr.Items))
+            for _, it := range dr.Items {
+                items = append(items, models.DetectionItem{Class: it.Class_, ClassID: it.ClassId, Confidence: it.Confidence, BBox: models.BoundingBox{X: it.Bbox.X, Y: it.Bbox.Y, Width: it.Bbox.Width, Height: it.Bbox.Height}})
+            }
+            summary := models.DetectionSummary{HasIssue: dr.Summary.HasIssue, IssueType: dr.Summary.IssueType, ObjectCount: dr.Summary.ObjectCount, AvgScore: dr.Summary.AvgScore}
+
+            run := &models.DetectionRun{RunID: jobID+":"+im.Filename, ImageID: im.ID, SceneID: im.SceneID, SourceFilename: im.Filename, SourcePath: sourcePath, ProcessedFilename: im.Filename, ProcessedPath: sourcePath, ModelName: cfg.ModelName, ModelVersion: cfg.ModelVersion, Device: cfg.Device, IoUThreshold: cfg.IoU, ConfidenceThreshold: cfg.Conf, InferenceTimeMs: time.Since(start).Milliseconds(), Items: items, Summary: summary, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+            if _, err := models.InsertDetectionRun(run); err != nil {
+                job.Status = "failed"
+                job.Error = fmt.Sprintf("写库失败: %v", err)
+                t := time.Now(); job.EndedAt = &t
+                GetJobManager().SetJob(job)
+                GetJobManager().ReleaseScene(im.SceneID, jobID)
+                return
+            }
+
+            job.Progress = 1
+            job.Status = "completed"
+            job.Message = "任务完成(单图)"
+            t := time.Now(); job.EndedAt = &t
+            GetJobManager().SetJob(job)
+            GetJobManager().ReleaseScene(im.SceneID, jobID)
+            return
+        }
+
         job.Status = "running"
         job.Message = "正在运行YOLO推理(单图)"
         GetJobManager().SetJob(job)
@@ -451,12 +657,10 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
             }
             t := time.Now(); job.EndedAt = &t
             GetJobManager().SetJob(job)
-            // 释放场景锁
             GetJobManager().ReleaseScene(im.SceneID, jobID)
             return
         }
 
-        // 解析标签并写库
         job.Status = "parsing"
         job.Message = "解析标签并写入数据库(单图)"
         GetJobManager().SetJob(job)
@@ -516,7 +720,14 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
             CreatedAt:           time.Now(),
             UpdatedAt:           time.Now(),
         }
-        _, _ = models.InsertDetectionRun(run)
+        if _, err := models.InsertDetectionRun(run); err != nil {
+            job.Status = "failed"
+            job.Error = fmt.Sprintf("写库失败: %v", err)
+            t := time.Now(); job.EndedAt = &t
+            GetJobManager().SetJob(job)
+            GetJobManager().ReleaseScene(im.SceneID, jobID)
+            return
+        }
 
         job.Progress = 1
         job.Status = "completed"

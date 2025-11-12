@@ -77,6 +77,27 @@ definitions:
       message:
         type: string
     type: object
+  handlers.StartDetectRequest:
+    properties:
+      conf:
+        description: 置信度阈值，默认 0.25
+        type: number
+      device:
+        description: 设备：cpu/cuda:0/mps，默认空（由YOLO自动选择）
+        type: string
+      iou:
+        description: IoU 阈值，默认 0.45
+        type: number
+      modelName:
+        description: 模型名称，默认 "yolov8"
+        type: string
+      modelVersion:
+        description: 模型版本，可选
+        type: string
+      weights:
+        description: 模型权重文件路径或名称，默认 yolov8s.pt
+        type: string
+    type: object
   models.BoundingBox:
     properties:
       height:
@@ -273,6 +294,88 @@ paths:
       summary: 创建处理前后对比记录
       tags:
       - comparisons
+  /detect/jobs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 取消任务（支持pending/running/parsing阶段），任务将标记为canceled
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消成功
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 未找到任务
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: 任务不可取消（已结束）
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 取消正在运行的检测任务
+      tags:
+      - detections
+    get:
+      consumes:
+      - application/json
+      description: 前端轮询或SSE，可获取任务进度/状态
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 任务状态
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 未找到任务
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 查询推理任务状态
+      tags:
+      - detections
+  /detect/jobs/{id}/stream:
+    get:
+      description: 通过SSE实时获取任务状态更新，直到任务结束
+      parameters:
+      - description: 任务ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE事件流
+          schema:
+            type: string
+        "404":
+          description: 未找到任务
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 订阅检测任务实时进度（SSE）
+      tags:
+      - detections
   /detections:
     get:
       consumes:
@@ -368,6 +471,38 @@ paths:
       summary: 获取单个图片详情
       tags:
       - images
+  /images/{id}/detect:
+    post:
+      consumes:
+      - application/json
+      description: 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库（单张图片）
+      parameters:
+      - description: 图片ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 推理配置，可选
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/handlers.StartDetectRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: 任务已启动，返回jobId与初始状态
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 前端一键触发单图推理
+      tags:
+      - detections
   /images/{id}/detections:
     get:
       consumes:
@@ -810,6 +945,38 @@ paths:
       summary: 更新场景信息
       tags:
       - scenes
+  /scenes/{id}/detect:
+    post:
+      consumes:
+      - application/json
+      description: 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库
+      parameters:
+      - description: 场景ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 推理配置，可选
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/handlers.StartDetectRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: 任务已启动，返回jobId与初始状态
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 前端一键触发场景批量推理
+      tags:
+      - detections
   /scenes/{id}/first-image:
     get:
       consumes:

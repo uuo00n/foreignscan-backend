@@ -127,6 +127,127 @@
                 }
             }
         },
+        "/detect/jobs/{id}": {
+            "get": {
+                "description": "前端轮询或SSE，可获取任务进度/状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "查询推理任务状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "任务状态",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "未找到任务",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "取消任务（支持pending/running/parsing阶段），任务将标记为canceled",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "取消正在运行的检测任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取消成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "未找到任务",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "任务不可取消（已结束）",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/detect/jobs/{id}/stream": {
+            "get": {
+                "description": "通过SSE实时获取任务状态更新，直到任务结束",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "订阅检测任务实时进度（SSE）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE事件流",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "未找到任务",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/detections": {
             "get": {
                 "description": "支持按场景、时间范围、是否有问题、类别等条件筛选检测运行",
@@ -420,6 +541,54 @@
                     },
                     "404": {
                         "description": "图片不存在",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/images/{id}/detect": {
+            "post": {
+                "description": "由前端点击触发，后端启动异步任务，运行YOLO并写入数据库（单张图片）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "前端一键触发单图推理",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "图片ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "推理配置，可选",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.StartDetectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "任务已启动，返回jobId与初始状态",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -940,6 +1109,54 @@
                     },
                     "500": {
                         "description": "服务器错误",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/scenes/{id}/detect": {
+            "post": {
+                "description": "由前端点击触发，后端启动异步任务，运行YOLO并写入数据库",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "detections"
+                ],
+                "summary": "前端一键触发场景批量推理",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "场景ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "推理配置，可选",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.StartDetectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "任务已启动，返回jobId与初始状态",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1481,6 +1698,35 @@
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.StartDetectRequest": {
+            "type": "object",
+            "properties": {
+                "conf": {
+                    "description": "置信度阈值，默认 0.25",
+                    "type": "number"
+                },
+                "device": {
+                    "description": "设备：cpu/cuda:0/mps，默认空（由YOLO自动选择）",
+                    "type": "string"
+                },
+                "iou": {
+                    "description": "IoU 阈值，默认 0.45",
+                    "type": "number"
+                },
+                "modelName": {
+                    "description": "模型名称，默认 \"yolov8\"",
+                    "type": "string"
+                },
+                "modelVersion": {
+                    "description": "模型版本，可选",
+                    "type": "string"
+                },
+                "weights": {
+                    "description": "模型权重文件路径或名称，默认 yolov8s.pt",
                     "type": "string"
                 }
             }

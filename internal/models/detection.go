@@ -97,8 +97,9 @@ func InsertDetectionRun(run *DetectionRun) (primitive.ObjectID, error) {
         // 如果是插入新文档，返回新ID；否则查询已有文档ID
         if res.UpsertedID != nil {
             if oid, ok := res.UpsertedID.(primitive.ObjectID); ok {
-                // 更新图片摘要（IsDetected/HasIssue/IssueType）
-                _ = UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true)
+                if err2 := UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true); err2 != nil {
+                    return primitive.NilObjectID, err2
+                }
                 return oid, nil
             }
         }
@@ -108,8 +109,9 @@ func InsertDetectionRun(run *DetectionRun) (primitive.ObjectID, error) {
         if err != nil {
             return primitive.NilObjectID, err
         }
-        // 仍然更新图片摘要（避免外部遗漏）
-        _ = UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true)
+        if err2 := UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true); err2 != nil {
+            return primitive.NilObjectID, err2
+        }
         return existing.ID, nil
     }
 
@@ -120,7 +122,9 @@ func InsertDetectionRun(run *DetectionRun) (primitive.ObjectID, error) {
     }
     oid, ok := res.InsertedID.(primitive.ObjectID)
     if ok {
-        _ = UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true)
+        if err2 := UpdateImageDetectionSummary(run.ImageID, run.Summary.HasIssue, run.Summary.IssueType, true); err2 != nil {
+            return primitive.NilObjectID, err2
+        }
         return oid, nil
     }
     return primitive.NilObjectID, errors.New("insertedID is not ObjectID")

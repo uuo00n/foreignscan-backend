@@ -359,25 +359,41 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 					processedPath = utils.NormalizeUploadsLocalPath(dr.LabeledPath)
 					processedFilename = filepath.Base(processedPath)
 				}
-				run := &models.DetectionRun{
-					RunID:               jobID + ":" + im.Filename,
-					ImageID:             im.ID,
-					SceneID:             sceneID,
-					SourceFilename:      im.Filename,
-					SourcePath:          sourcePath,
-					ProcessedFilename:   processedFilename,
-					ProcessedPath:       processedPath,
-					ModelName:           cfg.ModelName,
-					ModelVersion:        cfg.ModelVersion,
-					Device:              cfg.Device,
-					IoUThreshold:        cfg.IoU,
-					ConfidenceThreshold: cfg.Conf,
-					InferenceTimeMs:     time.Since(start).Milliseconds(),
-					Items:               items,
-					Summary:             models.DetectionSummary{HasIssue: dr.Summary.HasIssue, IssueType: dr.Summary.IssueType, ObjectCount: dr.Summary.ObjectCount, AvgScore: dr.Summary.AvgScore},
-					CreatedAt:           time.Now(),
-					UpdatedAt:           time.Now(),
-				}
+                sumDet := models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                // 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
+                if len(items) == 0 && strings.TrimSpace(processedPath) != "" {
+                    dir := filepath.Dir(processedPath)
+                    base := strings.TrimSuffix(filepath.Base(processedPath), filepath.Ext(processedPath))
+                    labelPathPrimary := filepath.Join(dir, base+".txt")
+                    labelAbs := utils.NormalizeUploadsLocalPath(labelPathPrimary)
+                    if _, err := os.Stat(labelAbs); os.IsNotExist(err) {
+                        labelAbs = utils.NormalizeUploadsLocalPath(filepath.Join(dir, "labels", base+".txt"))
+                    }
+                    if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil && len(parsed) > 0 {
+                        items = parsed
+                        sumDet = models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                    }
+                }
+
+                run := &models.DetectionRun{
+                    RunID:               jobID + ":" + im.Filename,
+                    ImageID:             im.ID,
+                    SceneID:             sceneID,
+                    SourceFilename:      im.Filename,
+                    SourcePath:          sourcePath,
+                    ProcessedFilename:   processedFilename,
+                    ProcessedPath:       processedPath,
+                    ModelName:           cfg.ModelName,
+                    ModelVersion:        cfg.ModelVersion,
+                    Device:              cfg.Device,
+                    IoUThreshold:        cfg.IoU,
+                    ConfidenceThreshold: cfg.Conf,
+                    InferenceTimeMs:     time.Since(start).Milliseconds(),
+                    Items:               items,
+                    Summary:             sumDet,
+                    CreatedAt:           time.Now(),
+                    UpdatedAt:           time.Now(),
+                }
 				if _, err := models.InsertDetectionRun(run); err != nil {
 					job.Message = fmt.Sprintf("写库失败 %s: %v", e.Name(), err)
 					GetJobManager().SetJob(job)
@@ -537,7 +553,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 
 			// 汇总（简单示例：有任意目标视为存在问题）
 			summary := models.DetectionSummary{
-				HasIssue:    len(items) > 0,
+				HasIssue:    hasNonPerson(items),
 				IssueType:   "auto",
 				ObjectCount: len(items),
 				AvgScore:    avgConfidence(items),
@@ -593,14 +609,27 @@ func shortOut(s string) string {
 }
 
 func avgConfidence(items []models.DetectionItem) float64 {
-	if len(items) == 0 {
-		return 0
-	}
-	sum := 0.0
-	for _, it := range items {
-		sum += it.Confidence
-	}
-	return sum / float64(len(items))
+    if len(items) == 0 {
+        return 0
+    }
+    sum := 0.0
+    for _, it := range items {
+        sum += it.Confidence
+    }
+    return sum / float64(len(items))
+}
+
+func isPerson(it models.DetectionItem) bool {
+    return strings.EqualFold(it.Class, "person") || it.ClassID == 0
+}
+
+func hasNonPerson(items []models.DetectionItem) bool {
+    for _, it := range items {
+        if !isPerson(it) {
+            return true
+        }
+    }
+    return false
 }
 
 // StartImageDetect 启动单张图片的推理任务（异步）
@@ -716,11 +745,14 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 				return
 			}
 
-			items := make([]models.DetectionItem, 0, len(dr.Items))
-			for _, it := range dr.Items {
-				items = append(items, models.DetectionItem{Class: it.Class_, ClassID: it.ClassId, Confidence: it.Confidence, BBox: models.BoundingBox{X: it.Bbox.X, Y: it.Bbox.Y, Width: it.Bbox.Width, Height: it.Bbox.Height}})
-			}
-			summary := models.DetectionSummary{HasIssue: dr.Summary.HasIssue, IssueType: dr.Summary.IssueType, ObjectCount: dr.Summary.ObjectCount, AvgScore: dr.Summary.AvgScore}
+            items := make([]models.DetectionItem, 0, len(dr.Items))
+            for _, it := range dr.Items {
+                items = append(items, models.DetectionItem{Class: it.Class_, ClassID: it.ClassId, Confidence: it.Confidence, BBox: models.BoundingBox{X: it.Bbox.X, Y: it.Bbox.Y, Width: it.Bbox.Width, Height: it.Bbox.Height}})
+            }
+            summary := models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+            if summary.IssueType == "" && summary.ObjectCount == 0 && summary.AvgScore == 0 && len(items) > 0 {
+                summary = models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+            }
 
 			processedPath := sourcePath
 			processedFilename := im.Filename
@@ -728,7 +760,22 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 				processedPath = utils.NormalizeUploadsLocalPath(dr.LabeledPath)
 				processedFilename = filepath.Base(processedPath)
 			}
-			run := &models.DetectionRun{RunID: jobID + ":" + im.Filename, ImageID: im.ID, SceneID: im.SceneID, SourceFilename: im.Filename, SourcePath: sourcePath, ProcessedFilename: processedFilename, ProcessedPath: processedPath, ModelName: cfg.ModelName, ModelVersion: cfg.ModelVersion, Device: cfg.Device, IoUThreshold: cfg.IoU, ConfidenceThreshold: cfg.Conf, InferenceTimeMs: time.Since(start).Milliseconds(), Items: items, Summary: summary, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+            // 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
+            if len(items) == 0 && strings.TrimSpace(processedPath) != "" {
+                dir := filepath.Dir(processedPath)
+                base := strings.TrimSuffix(filepath.Base(processedPath), filepath.Ext(processedPath))
+                labelPathPrimary := filepath.Join(dir, base+".txt")
+                labelAbs := utils.NormalizeUploadsLocalPath(labelPathPrimary)
+                if _, err := os.Stat(labelAbs); os.IsNotExist(err) {
+                    labelAbs = utils.NormalizeUploadsLocalPath(filepath.Join(dir, "labels", base+".txt"))
+                }
+                if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil && len(parsed) > 0 {
+                    items = parsed
+                    summary = models.DetectionSummary{HasIssue: true, IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                }
+            }
+
+            run := &models.DetectionRun{RunID: jobID + ":" + im.Filename, ImageID: im.ID, SceneID: im.SceneID, SourceFilename: im.Filename, SourcePath: sourcePath, ProcessedFilename: processedFilename, ProcessedPath: processedPath, ModelName: cfg.ModelName, ModelVersion: cfg.ModelVersion, Device: cfg.Device, IoUThreshold: cfg.IoU, ConfidenceThreshold: cfg.Conf, InferenceTimeMs: time.Since(start).Milliseconds(), Items: items, Summary: summary, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 			if _, err := models.InsertDetectionRun(run); err != nil {
 				job.Status = "failed"
 				job.Error = fmt.Sprintf("写库失败: %v", err)
@@ -819,7 +866,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 		}
 
 		summary := models.DetectionSummary{
-			HasIssue:    len(items) > 0,
+			HasIssue:    hasNonPerson(items),
 			IssueType:   "auto",
 			ObjectCount: len(items),
 			AvgScore:    avgConfidence(items),

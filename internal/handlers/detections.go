@@ -150,7 +150,7 @@ func CreateImageDetection(c *gin.Context) {
 	}
 
 	// 如果请求中没有检测项，则尝试从 YOLO 标签文件解析
-	if len(req.Items) == 0 && req.ProcessedPath != "" {
+    if len(req.Items) == 0 && req.ProcessedPath != "" {
 		// 约定：处理后的图片与标签txt存放在同一目录（uploads/labels/<sceneId>/），
 		// 标签文件与图片同名，仅扩展名不同（.txt）
 
@@ -169,10 +169,27 @@ func CreateImageDetection(c *gin.Context) {
 		imgAbsPath := utils.NormalizeUploadsLocalPath(req.SourcePath)
 
 		// 解析标签生成检测项
-		if items, err := utils.ParseYOLOLabelsToItems(labelAbsPath, imgAbsPath); err == nil {
-			req.Items = items
-		}
-	}
+        if items, err := utils.ParseYOLOLabelsToItems(labelAbsPath, imgAbsPath); err == nil {
+            req.Items = items
+        }
+    }
+
+    // 兜底生成 Summary（当请求未提供或为空且 items 非空时）
+    if (req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0) && len(req.Items) > 0 {
+        sum := 0.0
+        hasNonPerson := false
+        for _, it := range req.Items {
+            sum += it.Confidence
+            if !strings.EqualFold(it.Class, "person") && it.ClassID != 0 {
+                hasNonPerson = true
+            }
+        }
+        avg := 0.0
+        if len(req.Items) > 0 {
+            avg = sum / float64(len(req.Items))
+        }
+        req.Summary = models.DetectionSummary{HasIssue: hasNonPerson, IssueType: "auto", ObjectCount: len(req.Items), AvgScore: avg}
+    }
 
 	run := &models.DetectionRun{
 		RunID:               req.RunID,
@@ -194,11 +211,11 @@ func CreateImageDetection(c *gin.Context) {
 		UpdatedAt:           time.Now(),
 	}
 
-	id, err := models.InsertDetectionRun(run)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入检测结果失败: " + err.Error()})
-		return
-	}
+    id, err := models.InsertDetectionRun(run)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入检测结果失败: " + err.Error()})
+        return
+    }
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "id": id.Hex(), "message": "检测结果写入成功"})
 }

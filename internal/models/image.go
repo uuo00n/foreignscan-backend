@@ -23,7 +23,7 @@ type Image struct {
     IsDetected       bool               `bson:"isDetected" json:"isDetected"`
     HasIssue         bool               `bson:"hasIssue" json:"hasIssue"`
     IssueType        string             `bson:"issueType" json:"issueType"`
-    Status           string             `bson:"status" json:"status"`               // 图片检测状态：未检测/合格/缺陷
+    Status           string             `bson:"status" json:"status"`               // 图片检测状态：未检测/已检测
     DetectionResults []interface{}      `bson:"detectionResults" json:"detectionResults"`
     CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"`       // 创建时间
     UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"`       // 更新时间
@@ -32,6 +32,8 @@ type Image struct {
 // 定义图片状态常量，避免魔法字符串
 const (
     ImageStatusUndetected = "未检测"
+    ImageStatusDetected   = "已检测"
+    // 兼容旧数据（读取时可转换为已检测）
     ImageStatusQualified  = "合格"
     ImageStatusDefective  = "缺陷"
 )
@@ -269,6 +271,65 @@ func FindByStatusAndTimeRange(status string, start, end time.Time) ([]Image, err
             "$gte": start,
             "$lte": end,
         },
+    }
+    opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+    cursor, err := collection.Find(ctx, filter, opts)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var images []Image
+    if err := cursor.All(ctx, &images); err != nil {
+        return nil, err
+    }
+    return images, nil
+}
+
+// FindByFlags 根据 isDetected 与可选的 hasIssue 筛选图片
+// hasIssueParamProvided 为 true 时按 hasIssue 精确筛选；否则仅按 isDetected
+func FindByFlags(isDetected bool, hasIssueParamProvided bool, hasIssue bool) ([]Image, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    collection := database.GetCollection("images")
+
+    filter := bson.M{
+        "isDetected": isDetected,
+    }
+    if hasIssueParamProvided {
+        filter["hasIssue"] = hasIssue
+    }
+    opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+    cursor, err := collection.Find(ctx, filter, opts)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var images []Image
+    if err := cursor.All(ctx, &images); err != nil {
+        return nil, err
+    }
+    return images, nil
+}
+
+// FindByFlagsAndTimeRange 根据 isDetected 与可选 hasIssue 及时间范围筛选图片
+func FindByFlagsAndTimeRange(isDetected bool, hasIssueParamProvided bool, hasIssue bool, start, end time.Time) ([]Image, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    collection := database.GetCollection("images")
+
+    filter := bson.M{
+        "isDetected": isDetected,
+        "createdAt": bson.M{
+            "$gte": start,
+            "$lte": end,
+        },
+    }
+    if hasIssueParamProvided {
+        filter["hasIssue"] = hasIssue
     }
     opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
     cursor, err := collection.Find(ctx, filter, opts)

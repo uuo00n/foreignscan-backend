@@ -333,7 +333,8 @@ func GetImageDetail(c *gin.Context) {
 // @Tags images
 // @Accept json
 // @Produce json
-// @Param status query string true "状态（合格/缺陷/未检测）"
+// @Param status query string true "状态（已检测/未检测）"
+// @Param hasIssue query string false "是否存在问题（true/false，仅在status=已检测时生效）"
 // @Param start query string false "起始时间（YYYY-MM-DD 或 RFC3339）"
 // @Param end query string false "结束时间（YYYY-MM-DD 或 RFC3339）"
 // @Success 200 {object} map[string]interface{} "成功获取筛选结果"
@@ -349,12 +350,11 @@ func GetImagesByStatusTime(c *gin.Context) {
     }
     // 允许的状态值（中文）
     valid := map[string]bool{
-        models.ImageStatusQualified:  true,
-        models.ImageStatusDefective:  true,
         models.ImageStatusUndetected: true,
+        models.ImageStatusDetected:   true,
     }
     if !valid[status] {
-        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "status仅支持：合格/缺陷/未检测"})
+        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "status仅支持：已检测/未检测"})
         return
     }
 
@@ -363,6 +363,14 @@ func GetImagesByStatusTime(c *gin.Context) {
     // - RFC3339：如 2025-11-10T15:00:00Z
     startStr := c.Query("start")
     endStr := c.Query("end")
+    hasIssueStr := c.Query("hasIssue")
+    hasIssueParamProvided := false
+    hasIssueVal := false
+    if hasIssueStr != "" {
+        hasIssueParamProvided = true
+        if hasIssueStr == "true" || hasIssueStr == "1" { hasIssueVal = true }
+        if hasIssueStr == "false" || hasIssueStr == "0" { /* remains false */ }
+    }
 
     parseTime := func(s string, isStart bool) (time.Time, error) {
         if len(s) == 10 { // YYYY-MM-DD
@@ -386,8 +394,13 @@ func GetImagesByStatusTime(c *gin.Context) {
 
     // 3) 根据是否提供时间参数选择查询方法
     if startStr == "" && endStr == "" {
-        // 仅按状态筛选
-        images, err = models.FindByStatus(status)
+        // 仅按状态/flags筛选
+        if status == models.ImageStatusUndetected {
+            images, err = models.FindByFlags(false, false, false)
+        } else {
+            // 已检测，可选按 hasIssue 进一步筛选
+            images, err = models.FindByFlags(true, hasIssueParamProvided, hasIssueVal)
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
             return
@@ -419,7 +432,11 @@ func GetImagesByStatusTime(c *gin.Context) {
             end = time.Now()
         }
 
-        images, err = models.FindByStatusAndTimeRange(status, start, end)
+        if status == models.ImageStatusUndetected {
+            images, err = models.FindByFlagsAndTimeRange(false, false, false, start, end)
+        } else {
+            images, err = models.FindByFlagsAndTimeRange(true, hasIssueParamProvided, hasIssueVal, start, end)
+        }
         if err != nil {
             c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
             return
@@ -429,7 +446,7 @@ func GetImagesByStatusTime(c *gin.Context) {
     // 4) 返回结果
     c.JSON(http.StatusOK, gin.H{
         "success": true,
-        "filters": gin.H{"status": status, "start": startStr, "end": endStr},
+        "filters": gin.H{"status": status, "start": startStr, "end": endStr, "hasIssue": hasIssueStr},
         "count":   len(images),
         "images":  images,
     })

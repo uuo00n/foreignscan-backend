@@ -137,11 +137,8 @@ func UpdateImageDetectionSummary(imageID primitive.ObjectID, hasIssue bool, issu
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    // 根据检测结果映射图片状态
-    status := ImageStatusQualified
-    if hasIssue {
-        status = ImageStatusDefective
-    }
+    // 根据检测结果映射图片状态（统一为两态：未检测/已检测）
+    status := ImageStatusDetected
     if !isDetected {
         status = ImageStatusUndetected
     }
@@ -151,7 +148,7 @@ func UpdateImageDetectionSummary(imageID primitive.ObjectID, hasIssue bool, issu
             "isDetected": isDetected,
             "hasIssue":   hasIssue,
             "issueType":  issueType,
-            "status":     status,     // 同步更新状态字段
+            "status":     status,
             "updatedAt":  time.Now(),
         },
     }

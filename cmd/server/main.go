@@ -15,7 +15,7 @@ import (
     "foreignscan/internal/database"
     "foreignscan/internal/handlers"
     "foreignscan/internal/middleware"
-    "foreignscan/internal/models"
+    
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -58,14 +58,7 @@ func main() {
     }
     defer database.Close()
 
-    // 初始化新表索引（问题表、对比表）
-    // 关键点：仅创建索引，不修改原有数据
-    if err := models.EnsureIssueIndexes(); err != nil {
-        log.Printf("初始化Issue索引失败: %v", err)
-    }
-    if err := models.EnsureComparisonIndexes(); err != nil {
-        log.Printf("初始化Comparison索引失败: %v", err)
-    }
+    // 已移除 issues/comparisons 索引初始化（未使用）
 
 	// 注册路由
 	setupRoutes(r)
@@ -187,9 +180,6 @@ func setupRoutes(r *gin.Engine) {
     api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)
         api.GET("/detect/jobs/:id", handlers.GetDetectJob)
 
-        // 新增：问题相关API
-        handlers.RegisterIssueRoutes(api)
-        // 新增：对比相关API
-        handlers.RegisterComparisonRoutes(api)
+        // 已移除问题与对比相关API（未使用）
     }
 }

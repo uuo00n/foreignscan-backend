@@ -9,7 +9,6 @@ import (
     "log"
     "os"
     "path/filepath"
-    "strconv"
     "strings"
     "time"
 
@@ -17,7 +16,6 @@ import (
     "foreignscan/internal/database"
     "foreignscan/internal/models"
 
-    "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -122,174 +120,22 @@ func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID,
 	}
 }
 
-// seedExtraData 填充 issues 和 comparisons 的测试数据
-func seedExtraData() {
-    log.Println("开始填充 issues 和 comparisons 测试数据...")
 
-	images, err := models.FindAll()
-	if err != nil {
-		log.Fatalf("查询图片失败: %v", err)
-	}
-	if len(images) == 0 {
-		log.Println("数据库中没有图片，跳过测试数据填充。")
-		return
-	}
-
-	n := 3
-	if len(images) < n {
-		n = len(images)
-	}
-
-	types := []string{"TEST-类型A", "TEST-类型B", "TEST-类型C"}
-	descs := []string{"TEST-设备皮带磨损说明", "TEST-护罩缺失说明", "TEST-油污泄漏说明"}
-
-	for i := 0; i < n; i++ {
-		img := images[i]
-
-		// 插入问题记录
-		issue := &models.Issue{
-			ImageID:     img.ID,
-			SceneID:     img.SceneID,
-			Type:        types[i%len(types)],
-			Description: descs[i%len(descs)],
-		}
-		issueID, err := models.InsertIssue(issue)
-		if err != nil {
-			log.Fatalf("插入问题记录失败 (imageId=%s): %v", img.ID.Hex(), err)
-		}
-
-		// 插入对比记录
-		processedFilename := fmt.Sprintf("processed_%s", img.Filename)
-		afterPath := filepath.Join("uploads", "images", img.SceneID.Hex(), processedFilename)
-		comp := &models.Comparison{
-			ImageID:    img.ID,
-			BeforePath: img.Path,
-			AfterPath:  afterPath,
-			DiffInfo:   map[string]interface{}{"note": "TEST-示例对比，无真实文件"},
-			Remark:     fmt.Sprintf("TEST-对比记录-%d", i+1),
-		}
-		compID, err := models.InsertComparison(comp)
-		if err != nil {
-			log.Fatalf("插入对比记录失败 (imageId=%s): %v", img.ID.Hex(), err)
-		}
-
-		log.Printf("已插入 Issue: %s, Comparison: %s, 对应图片: %s", issueID.Hex(), compID.Hex(), img.ID.Hex())
-	}
-
-	log.Printf("完成：issues/comparisons 各插入 %d 条测试数据。", n)
-}
-
-// augmentExisting 针对已存在的 images，补充缺失的 issues/comparisons 数据
-// - dryRun: 仅打印将要执行的操作，不实际写入数据库
-// - limit: 限制处理的图片数量（0 或负数表示不限制）
-func augmentExisting(ctx context.Context, dryRun bool, limit int) {
-    log.Println("开始增补现有图片的 issues/comparisons 数据...")
-
-    // 读取所有图片
-    images, err := models.FindAll()
-    if err != nil {
-        log.Fatalf("查询图片失败: %v", err)
-    }
-    if len(images) == 0 {
-        log.Println("数据库中没有图片，增补操作结束。")
-        return
-    }
-
-    // 如果设置了 limit，则截取前 limit 条
-    if limit > 0 && limit < len(images) {
-        images = images[:limit]
-    }
-
-    // 计数器
-    var addedIssues, addedComparisons, skipped int
-
-    // 遍历图片，检查并增补
-    for _, img := range images {
-        // 检查是否已有 issue
-        issueCount, err := database.GetCollection("issues").CountDocuments(ctx, bson.M{"imageId": img.ID})
-        if err != nil {
-            log.Fatalf("统计 issues 失败 (imageId=%s): %v", img.ID.Hex(), err)
-        }
-
-        // 检查是否已有 comparison
-        compCount, err := database.GetCollection("comparisons").CountDocuments(ctx, bson.M{"imageId": img.ID})
-        if err != nil {
-            log.Fatalf("统计 comparisons 失败 (imageId=%s): %v", img.ID.Hex(), err)
-        }
-
-        // 如果两者都已存在，则跳过
-        if issueCount > 0 && compCount > 0 {
-            skipped++
-            continue
-        }
-
-        // 构造测试 issue 数据
-        issue := &models.Issue{
-            ImageID:     img.ID,
-            SceneID:     img.SceneID,
-            Type:        "TEST-自动增补类型",
-            Description: "TEST-自动为缺失图片补充的问题记录",
-        }
-
-        // 构造测试 comparison 数据
-        processedFilename := fmt.Sprintf("processed_%s", img.Filename)
-        afterPath := filepath.Join("uploads", "images", img.SceneID.Hex(), processedFilename)
-        comp := &models.Comparison{
-            ImageID:    img.ID,
-            BeforePath: img.Path,
-            AfterPath:  afterPath,
-            DiffInfo:   map[string]interface{}{"note": "TEST-自动增补的对比信息，无真实文件"},
-            Remark:     "TEST-自动增补",
-        }
-
-        // dry-run 模式仅打印，不写库
-        if dryRun {
-            if issueCount == 0 {
-                log.Printf("[dry-run] 将为图片 %s 插入 Issue", img.ID.Hex())
-            }
-            if compCount == 0 {
-                log.Printf("[dry-run] 将为图片 %s 插入 Comparison", img.ID.Hex())
-            }
-            continue
-        }
-
-        // 实际写库
-        if issueCount == 0 {
-            if _, err := models.InsertIssue(issue); err != nil {
-                log.Fatalf("插入 Issue 失败 (imageId=%s): %v", img.ID.Hex(), err)
-            }
-            addedIssues++
-        }
-        if compCount == 0 {
-            if _, err := models.InsertComparison(comp); err != nil {
-                log.Fatalf("插入 Comparison 失败 (imageId=%s): %v", img.ID.Hex(), err)
-            }
-            addedComparisons++
-        }
-    }
-
-    if dryRun {
-        log.Printf("[dry-run] 预估增补：Issues=%d, Comparisons=%d, 已存在跳过=%d", addedIssues, addedComparisons, skipped)
-    } else {
-        log.Printf("增补完成：新增 Issues=%d, 新增 Comparisons=%d, 已存在跳过=%d", addedIssues, addedComparisons, skipped)
-    }
-}
 
 func main() {
     var (
         interactive bool
-        seedExtra   bool
         mongoURI    string
         dbName      string
         imagesDir   string
         stylesDir   string
-        mode        string // full-init 或 augment-existing
-        dryRun      bool   // 仅用于 augment-existing 模式
-        limit       int    // 仅用于 augment-existing 模式
+        mode        string // full-init 或 structure-only
+        dryRun      bool   // 保留参数占位（无需使用）
+        limit       int    // 保留参数占位（无需使用）
     )
 
     flag.BoolVar(&interactive, "interactive", true, "是否使用交互模式")
-    flag.BoolVar(&seedExtra, "seed-extra", true, "是否填充 issues 和 comparisons 的测试数据（仅 full-init 模式生效）")
+    // 已移除 issues/comparisons 相关测试数据填充
     flag.StringVar(&mongoURI, "mongo-uri", "mongodb://localhost:27017", "MongoDB连接URI")
     flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
     flag.StringVar(&imagesDir, "images-dir", "./uploads/images", "图片目录路径（仅 full-init 模式使用）")
@@ -309,7 +155,7 @@ func main() {
         if mode == "full-init" {
             imagesDir = getUserInput("图片目录路径", imagesDir)
             stylesDir = getUserInput("样式图目录路径", stylesDir)
-            seedExtra = getUserConfirmation("是否填充 issues 和 comparisons 的测试数据?", seedExtra)
+            // 不再填充 issues/comparisons 测试数据
 
             fmt.Println("\n=== 初始化配置 ===")
             fmt.Printf("MongoDB URI: %s\n", mongoURI)
@@ -317,20 +163,7 @@ func main() {
             fmt.Printf("运行模式: %s\n", mode)
             fmt.Printf("图片目录: %s\n", imagesDir)
             fmt.Printf("样式图目录: %s\n", stylesDir)
-            fmt.Printf("填充测试数据: %v\n", seedExtra)
-        } else if mode == "augment-existing" {
-            dryRun = getUserConfirmation("增补模式：是否使用 dry-run（仅打印，不写库）?", dryRun)
-            // limit 输入为字符串，再转换为整数
-            limitStr := getUserInput("增补模式：处理的图片数量上限（0 表示不限制）", fmt.Sprintf("%d", limit))
-            if v, err := strconv.Atoi(strings.TrimSpace(limitStr)); err == nil {
-                limit = v
-            }
-            fmt.Println("\n=== 初始化配置 ===")
-            fmt.Printf("MongoDB URI: %s\n", mongoURI)
-            fmt.Printf("数据库名称: %s\n", dbName)
-            fmt.Printf("运行模式: %s\n", mode)
-            fmt.Printf("dry-run: %v\n", dryRun)
-            fmt.Printf("limit: %d\n", limit)
+            // 不再显示 issues/comparisons 测试数据配置
         } else if mode == "structure-only" {
             fmt.Println("\n=== 初始化配置 ===")
             fmt.Printf("MongoDB URI: %s\n", mongoURI)
@@ -356,20 +189,14 @@ func main() {
     ctx := context.Background()
 
     // 创建索引（所有模式都需要）
-    if err := models.EnsureIssueIndexes(); err != nil {
-        log.Fatalf("创建 Issue 索引失败: %v", err)
-    }
-    if err := models.EnsureComparisonIndexes(); err != nil {
-        log.Fatalf("创建 Comparison 索引失败: %v", err)
-    }
     if err := models.EnsureDetectionIndexes(); err != nil {
         log.Fatalf("创建 Detection 索引失败: %v", err)
     }
-    fmt.Println("已确保 issues/comparisons/detections 索引")
+    fmt.Println("已确保 detections 索引")
 
     if mode == "structure-only" {
         // 仅初始化集合，不进行任何数据导入或增补
-        collections := []string{"scenes", "styleImages", "images", "issues", "comparisons", "detections"}
+        collections := []string{"scenes", "styleImages", "images", "detections"}
         for _, coll := range collections {
             if err := database.GetDatabase().CreateCollection(ctx, coll); err != nil {
                 // 如果集合已存在，CreateCollection 会报错，此处仅提示
@@ -382,15 +209,10 @@ func main() {
         return
     }
 
-    if mode == "augment-existing" {
-        // 增补模式：不清理集合，不读文件，仅为现有图片补数据
-        augmentExisting(ctx, dryRun, limit)
-        fmt.Println("增补操作完成！")
-        return
-    }
+    // 已移除 augment-existing 模式
 
     // full-init 模式：清库并按文件系统导入
-    collectionsToDrop := []string{"scenes", "styleImages", "images", "issues", "comparisons"}
+    collectionsToDrop := []string{"scenes", "styleImages", "images"}
     for _, coll := range collectionsToDrop {
         if err := database.GetCollection(coll).Drop(ctx); err != nil {
             log.Printf("删除集合 %s 时出错 (可能不存在): %v", coll, err)
@@ -448,10 +270,7 @@ func main() {
         }
     }
 
-    // 如果需要，填充额外测试数据
-    if seedExtra {
-        seedExtraData()
-    }
+    // 不再填充 issues/comparisons 测试数据
 
     fmt.Println("数据库初始化完成!")
 }

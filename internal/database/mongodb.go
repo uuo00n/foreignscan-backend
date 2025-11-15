@@ -60,9 +60,7 @@ func Connect() error {
 	collections["styleImages"] = database.Collection("styleImages")
 	// 新增YOLO检测结果集合
 	collections["detections"] = database.Collection("detections")
-	// 新增问题与对比集合
-	collections["issues"] = database.Collection("issues")
-	collections["comparisons"] = database.Collection("comparisons")
+    // 已移除未使用的集合 issues/comparisons
 
 	return nil
 }

@@ -72,56 +72,36 @@ go mod download
 
 ### 初始化数据库
 
-scripts/init-db.go 提供三种模式以适配不同场景：
+scripts/init-db.go 现支持“仅结构初始化”（不导入任何数据）：
 
-- full-init：清空并初始化数据库结构，从文件系统导入 scenes/styleImages/images，且可选在导入后补充缺失的 issues/comparisons 测试数据
-- augment-existing：不清库，仅为现有 images 增补缺失的 issues/comparisons，可选择 dry-run 预览
-- structure-only：只创建集合与基础索引，不导入或增补任何数据，适合在新机器上“只搭结构”
+- 功能：创建集合并建立基础索引，不删除、不导入、不增补数据
+- 创建集合：`scenes`、`styleImages`、`images`、`detections`
+- 创建索引：
+  - `detections`：`imageId`、`sceneId+createdAt(desc)`、`summary.hasIssue`、`items.class`、`runId(unique)`
+  - `images`：`sceneId`、`createdAt(desc)`、`status`、`isDetected`、`hasIssue`
+  - `scenes`：`createdAt(desc)`
+  - `styleImages`：`sceneId`、`createdAt(desc)`
 
-常用示例（非交互模式）：
-
-```bash
-# 1) 仅初始化结构（不导数据）
-go run scripts/init-db.go -mode=structure-only -interactive=false -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan"
-
-# 2) 全量初始化（导入文件系统数据 + 可选补充测试数据）
-# 根据你的实际目录选择 images-dir/styles-dir，默认使用 ./uploads/images 与 ./uploads/styles
-go run scripts/init-db.go -mode=full-init -interactive=false \
-  -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan" \
-  -images-dir="./uploads/images" -styles-dir="./uploads/styles" \
-  -seed-extra=true
-
-# 3) 增补现有数据（只为缺失的 issues/comparisons 补数据）
-go run scripts/init-db.go -mode=augment-existing -interactive=false \
-  -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan" \
-  -dry-run=true -limit=100
-```
-
-交互模式：
+使用示例：
 
 ```bash
+# 非交互执行（推荐生产环境）
+go run scripts/init-db.go -interactive=false -mongo-uri="mongodb://localhost:27017" -db-name="foreignscan"
+
+# 交互执行（按提示输入 MongoDB URI / 数据库名）
 go run scripts/init-db.go
 ```
 
-- 运行后按提示选择模式与参数；当选择 structure-only 时，只进行集合与索引初始化
+参数说明：
 
-可用参数说明：
-
-- -mode：运行模式，可选 full-init | augment-existing | structure-only（必选，交互模式下会提示选择）
-- -interactive：是否交互模式，默认 true；设为 false 使用命令行参数直接运行
-- -mongo-uri：MongoDB 连接 URI，默认 mongodb://localhost:27017
-- -db-name：数据库名称，默认 foreignscan
-- -images-dir：图片数据目录（仅 full-init 使用），默认 ./uploads/images
-- -styles-dir：样式图目录（仅 full-init 使用），默认 ./uploads/styles
-- -seed-extra：是否在 full-init 导入后补充缺失的 issues/comparisons 测试数据（仅 full-init 使用），默认 false
-- -dry-run：仅打印计划操作而不写库（仅 augment-existing 使用），默认 false
-- -limit：最多处理多少条 images（仅 augment-existing 使用），默认 0 表示无限制
+- `-interactive`：是否交互模式，默认 `true`；设为 `false` 使用参数直接运行
+- `-mongo-uri`：MongoDB 连接串，默认 `mongodb://localhost:27017`
+- `-db-name`：数据库名称，默认 `foreignscan`
 
 注意事项：
 
-- structure-only 模式不会删除任何数据，也不会导入/增补数据，只保证基础集合与索引存在
-- full-init 模式会清理相关集合后再导入，请谨慎在生产环境使用
-- 如果你的数据目录在 cmd/server/uploads 下，请将 -images-dir/-styles-dir 指向对应子目录；也可以使用绝对路径
+- 多次运行是幂等的：集合已存在时仅提示，不会影响现有数据
+- 仅结构初始化不会导入文件系统数据；如需数据导入，请使用 `mongorestore` 或自定义脚本
 
 ### 数据导入/恢复（使用 mongorestore）
 

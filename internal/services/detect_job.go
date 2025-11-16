@@ -360,6 +360,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 					processedFilename = filepath.Base(processedPath)
 				}
                 sumDet := models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                if len(items) == 0 { sumDet.IssueType = "no_object" }
                 // 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
                 if len(items) == 0 && strings.TrimSpace(processedPath) != "" {
                     dir := filepath.Dir(processedPath)
@@ -372,6 +373,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
                     if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil && len(parsed) > 0 {
                         items = parsed
                         sumDet = models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                        if len(items) == 0 { sumDet.IssueType = "no_object" }
                     }
                 }
 
@@ -558,6 +560,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 				ObjectCount: len(items),
 				AvgScore:    avgConfidence(items),
 			}
+			if len(items) == 0 { summary.IssueType = "no_object" }
 
 			run := &models.DetectionRun{
 				RunID:               jobID + ":" + im.Filename,
@@ -620,10 +623,13 @@ func avgConfidence(items []models.DetectionItem) float64 {
 }
 
 func isPerson(it models.DetectionItem) bool {
-    return strings.EqualFold(it.Class, "person") || it.ClassID == 0
+    return strings.EqualFold(it.Class, "person")
 }
 
 func hasNonPerson(items []models.DetectionItem) bool {
+    if len(items) == 0 {
+        return true
+    }
     for _, it := range items {
         if !isPerson(it) {
             return true
@@ -750,6 +756,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
                 items = append(items, models.DetectionItem{Class: it.Class_, ClassID: it.ClassId, Confidence: it.Confidence, BBox: models.BoundingBox{X: it.Bbox.X, Y: it.Bbox.Y, Width: it.Bbox.Width, Height: it.Bbox.Height}})
             }
             summary := models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+            if len(items) == 0 { summary.IssueType = "no_object" }
             if summary.IssueType == "" && summary.ObjectCount == 0 && summary.AvgScore == 0 && len(items) > 0 {
                 summary = models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
             }
@@ -771,7 +778,8 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
                 }
                 if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil && len(parsed) > 0 {
                     items = parsed
-                    summary = models.DetectionSummary{HasIssue: true, IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                summary = models.DetectionSummary{HasIssue: hasNonPerson(items), IssueType: "auto", ObjectCount: len(items), AvgScore: avgConfidence(items)}
+                if len(items) == 0 { summary.IssueType = "no_object" }
                 }
             }
 
@@ -871,6 +879,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 			ObjectCount: len(items),
 			AvgScore:    avgConfidence(items),
 		}
+		if len(items) == 0 { summary.IssueType = "no_object" }
 
 		run := &models.DetectionRun{
 			RunID:               jobID + ":" + im.Filename,

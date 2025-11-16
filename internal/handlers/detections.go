@@ -175,12 +175,12 @@ func CreateImageDetection(c *gin.Context) {
     }
 
     // 兜底生成 Summary（当请求未提供或为空且 items 非空时）
-    if (req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0) && len(req.Items) > 0 {
+    if req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0 {
         sum := 0.0
         hasNonPerson := false
         for _, it := range req.Items {
             sum += it.Confidence
-            if !strings.EqualFold(it.Class, "person") && it.ClassID != 0 {
+            if !strings.EqualFold(it.Class, "person") {
                 hasNonPerson = true
             }
         }
@@ -188,7 +188,10 @@ func CreateImageDetection(c *gin.Context) {
         if len(req.Items) > 0 {
             avg = sum / float64(len(req.Items))
         }
-        req.Summary = models.DetectionSummary{HasIssue: hasNonPerson, IssueType: "auto", ObjectCount: len(req.Items), AvgScore: avg}
+        hi := (len(req.Items) == 0) || hasNonPerson
+        itype := "auto"
+        if len(req.Items) == 0 { itype = "no_object" }
+        req.Summary = models.DetectionSummary{HasIssue: hi, IssueType: itype, ObjectCount: len(req.Items), AvgScore: avg}
     }
 
 	run := &models.DetectionRun{

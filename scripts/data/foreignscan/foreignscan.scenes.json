@@ -1,0 +1,105 @@
+[{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afde"
+  },
+  "name": "机器设备场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "北区-A栋",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.228Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.228Z"
+  },
+  "status": "active"
+},
+{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afe2"
+  },
+  "name": "鼓形设备场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "南区-B栋",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.255Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.255Z"
+  },
+  "status": "active"
+},
+{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afe6"
+  },
+  "name": "挖掘机场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "东区-C栋",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.256Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.256Z"
+  },
+  "status": "active"
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4fdd"
+  },
+  "name": "机器设备场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "北区-A栋",
+  "status": "active",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.342Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.342Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4fe6"
+  },
+  "name": "鼓形设备场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "南区-B栋",
+  "status": "active",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.368Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.368Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4ff0"
+  },
+  "name": "挖掘机场景",
+  "description": "根据文件夹映射创建的场景",
+  "location": "东区-C栋",
+  "status": "active",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.370Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.370Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69083a1f5bb05c6af2be070b"
+  },
+  "name": "测试",
+  "description": "测试",
+  "location": "测试位置",
+  "createdAt": {
+    "$date": "2025-11-03T05:14:07.419Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-03T05:14:07.419Z"
+  },
+  "status": "active"
+}]

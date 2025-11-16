@@ -1,0 +1,144 @@
+[{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afe0"
+  },
+  "sceneId": {
+    "$oid": "691343ce5296db9dff41afde"
+  },
+  "name": "机器设备场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads\\styles\\001-machine\\example.jpg",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.235Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.235Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afe4"
+  },
+  "sceneId": {
+    "$oid": "691343ce5296db9dff41afe2"
+  },
+  "name": "鼓形设备场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads\\styles\\002-drum\\example.jpg",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.255Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.255Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691343ce5296db9dff41afe8"
+  },
+  "sceneId": {
+    "$oid": "691343ce5296db9dff41afe6"
+  },
+  "name": "挖掘机场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads\\styles\\003-excavator\\example.jpg",
+  "createdAt": {
+    "$date": "2025-11-11T14:10:22.256Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-11T14:10:22.256Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4fdf"
+  },
+  "sceneId": {
+    "$oid": "690710b5e3ea042cf37d4fdd"
+  },
+  "name": "机器设备场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads/styles/001-machine/example.jpg",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.366Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.366Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4fe8"
+  },
+  "sceneId": {
+    "$oid": "690710b5e3ea042cf37d4fe6"
+  },
+  "name": "鼓形设备场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads/styles/002-drum/example.jpg",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.369Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.369Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690710b5e3ea042cf37d4ff2"
+  },
+  "sceneId": {
+    "$oid": "690710b5e3ea042cf37d4ff0"
+  },
+  "name": "挖掘机场景样式",
+  "description": "场景的样式图",
+  "filename": "example.jpg",
+  "path": "uploads/styles/003-excavator/example.jpg",
+  "createdAt": {
+    "$date": "2025-11-02T08:05:09.371Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-02T08:05:09.371Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690a10535d7e15eeaa4482b8"
+  },
+  "sceneId": {
+    "$oid": "69083a1f5bb05c6af2be070b"
+  },
+  "name": "gg",
+  "description": "",
+  "filename": "style_20251104224019.JPG",
+  "path": "uploads/styles/69083a1f5bb05c6af2be070b/style_20251104224019.JPG",
+  "createdAt": {
+    "$date": "2025-11-04T14:40:19.626Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-04T14:40:19.626Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "690a10555d7e15eeaa4482ba"
+  },
+  "sceneId": {
+    "$oid": "69083a1f5bb05c6af2be070b"
+  },
+  "name": "gg",
+  "description": "",
+  "filename": "style_20251104224021.JPG",
+  "path": "uploads/styles/69083a1f5bb05c6af2be070b/style_20251104224021.JPG",
+  "createdAt": {
+    "$date": "2025-11-04T14:40:21.144Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-04T14:40:21.144Z"
+  }
+}]

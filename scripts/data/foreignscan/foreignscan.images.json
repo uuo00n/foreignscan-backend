@@ -1,572 +1,78 @@
 [{
   "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe1"
+    "$oid": "691b0ec1a569d710bf43c737"
   },
   "sequenceNumber": 1,
   "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
+    "$oid": "691b005a9f94c48d15692a1e"
   },
   "timestamp": {
-    "$date": "2025-10-27T00:00:00.000Z"
+    "$date": "2025-11-17T12:02:09.105Z"
   },
-  "location": "北区-A栋",
-  "filename": "20251027_001.jpg",
-  "path": "uploads/images/001/20251027_001.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
+  "location": "",
+  "filename": "20251117_691b005a9f94c48d15692a1e.jpg",
+  "path": "uploads\\images\\691b005a9f94c48d15692a1e\\20251117_691b005a9f94c48d15692a1e.jpg",
+  "isDetected": true,
+  "hasIssue": true,
+  "issueType": "auto",
+  "status": "已检测",
   "detectionResults": [],
   "createdAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
+    "$date": "2025-11-17T12:02:09.105Z"
   },
   "updatedAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "status": "未检测"
+    "$date": "2025-11-17T14:51:56.682Z"
+  }
 },
 {
   "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe2"
+    "$oid": "691b0f0ea569d710bf43c739"
   },
   "sequenceNumber": 2,
   "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
+    "$oid": "691b00509f94c48d15692a1c"
   },
   "timestamp": {
-    "$date": "2025-10-27T00:00:00.000Z"
+    "$date": "2025-11-17T12:03:26.259Z"
   },
-  "location": "北区-A栋",
-  "filename": "20251027_002.jpg",
-  "path": "uploads/images/001/20251027_002.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
+  "location": "",
+  "filename": "20251117_691b00509f94c48d15692a1c.jpg",
+  "path": "uploads\\images\\691b00509f94c48d15692a1c\\20251117_691b00509f94c48d15692a1c.jpg",
+  "isDetected": true,
+  "hasIssue": true,
+  "issueType": "auto",
+  "status": "已检测",
   "detectionResults": [],
   "createdAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
+    "$date": "2025-11-17T12:03:26.259Z"
   },
   "updatedAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "status": "未检测"
+    "$date": "2025-11-17T14:51:56.751Z"
+  }
 },
 {
   "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe3"
+    "$oid": "691bc5a468d24f224ede8f10"
   },
   "sequenceNumber": 3,
   "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
+    "$oid": "691b00749f94c48d15692a20"
   },
   "timestamp": {
-    "$date": "2025-10-27T00:00:00.000Z"
-  },
-  "location": "北区-A栋",
-  "filename": "20251027_003.jpg",
-  "path": "uploads/images/001/20251027_003.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe4"
-  },
-  "sequenceNumber": 4,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "timestamp": {
-    "$date": "2025-10-27T00:00:00.000Z"
-  },
-  "location": "北区-A栋",
-  "filename": "20251027_004.jpg",
-  "path": "uploads/images/001/20251027_004.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe5"
-  },
-  "sequenceNumber": 5,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "timestamp": {
-    "$date": "2025-10-27T00:00:00.000Z"
-  },
-  "location": "北区-A栋",
-  "filename": "20251027_005.jpg",
-  "path": "uploads/images/001/20251027_005.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.367Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fea"
-  },
-  "sequenceNumber": 6,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_001.jpg",
-  "path": "uploads/images/002/20251028_001.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4feb"
-  },
-  "sequenceNumber": 7,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_002.jpg",
-  "path": "uploads/images/002/20251028_002.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fec"
-  },
-  "sequenceNumber": 8,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_003.jpg",
-  "path": "uploads/images/002/20251028_003.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fed"
-  },
-  "sequenceNumber": 9,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_004.jpg",
-  "path": "uploads/images/002/20251028_004.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fee"
-  },
-  "sequenceNumber": 10,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_005.jpg",
-  "path": "uploads/images/002/20251028_005.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fef"
-  },
-  "sequenceNumber": 11,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-10-28T00:00:00.000Z"
-  },
-  "location": "南区-B栋",
-  "filename": "20251028_009.jpg",
-  "path": "uploads/images/002/20251028_009.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4ff4"
-  },
-  "sequenceNumber": 12,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "timestamp": {
-    "$date": "2025-10-31T00:00:00.000Z"
-  },
-  "location": "东区-C栋",
-  "filename": "20251031_001.jpg",
-  "path": "uploads/images/003/20251031_001.jpg",
-  "isDetected": false,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.372Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.372Z"
-  },
-  "status": "未检测"
-},
-{
-  "_id": {
-    "$oid": "69082d25aef2696241c54a15"
-  },
-  "sequenceNumber": 13,
-  "sceneId": {
-    "$oid": "69082d25aef2696241c54a14"
-  },
-  "timestamp": {
-    "$date": "2025-11-03T04:18:45.792Z"
+    "$date": "2025-11-18T01:02:28.944Z"
   },
   "location": "",
-  "filename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "path": "uploads/images/69082d25aef2696241c54a14/95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "auto",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-03T04:18:45.792Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.576Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "6909b6a6d1373f81fe5413d7"
-  },
-  "sequenceNumber": 14,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "timestamp": {
-    "$date": "2025-11-04T08:17:42.687Z"
-  },
-  "location": "",
-  "filename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "path": "uploads/images/690710b5e3ea042cf37d4fdd/20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "isDetected": true,
-  "hasIssue": true,
-  "issueType": "auto",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-04T08:17:42.687Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.491Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "690c419b399ed3dd831c952d"
-  },
-  "sequenceNumber": 15,
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "timestamp": {
-    "$date": "2025-11-06T06:35:07.715Z"
-  },
-  "location": "",
-  "filename": "20251106_69083a1f5bb05c6af2be070b.jpg",
-  "path": "uploads/images/69083a1f5bb05c6af2be070b/20251106_69083a1f5bb05c6af2be070b.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-06T06:35:07.715Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:13:17.069Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "690c419b399ed3dd831c952f"
-  },
-  "sequenceNumber": 16,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "timestamp": {
-    "$date": "2025-11-06T06:35:07.985Z"
-  },
-  "location": "",
-  "filename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "path": "uploads/images/690710b5e3ea042cf37d4ff0/20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-06T06:35:07.985Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:14:04.242Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "690c41b3399ed3dd831c9531"
-  },
-  "sequenceNumber": 17,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "timestamp": {
-    "$date": "2025-11-06T06:35:31.930Z"
-  },
-  "location": "",
-  "filename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "path": "uploads/images/690710b5e3ea042cf37d4ff0/20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "auto",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-06T06:35:31.930Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.201Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "690c4275399ed3dd831c9533"
-  },
-  "sequenceNumber": 18,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "timestamp": {
-    "$date": "2025-11-06T06:38:45.947Z"
-  },
-  "location": "",
-  "filename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "path": "uploads/images/690710b5e3ea042cf37d4ff0/20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-06T06:38:45.947Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:04:01.368Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "690c4276399ed3dd831c9535"
-  },
-  "sequenceNumber": 19,
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "timestamp": {
-    "$date": "2025-11-06T06:38:46.138Z"
-  },
-  "location": "",
-  "filename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "path": "uploads/images/690710b5e3ea042cf37d4fe6/20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "auto",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-06T06:38:46.138Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.289Z"
-  },
-  "status": "已检测"
-},
-{
-  "_id": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "sequenceNumber": 20,
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "timestamp": {
-    "$date": "2025-11-10T06:59:41.145Z"
-  },
-  "location": "",
-  "filename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "path": "uploads/images/69083a1f5bb05c6af2be070b/a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "auto",
-  "status": "已检测",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-10T06:59:41.145Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.420Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "sequenceNumber": 21,
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "timestamp": {
-    "$date": "2025-11-13T01:14:08.724Z"
-  },
-  "location": "",
-  "filename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "path": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
+  "filename": "20251118_691b00749f94c48d15692a20.jpg",
+  "path": "uploads\\images\\691b00749f94c48d15692a20\\20251118_691b00749f94c48d15692a20.jpg",
   "isDetected": true,
   "hasIssue": true,
   "issueType": "auto",
   "status": "已检测",
   "detectionResults": [],
   "createdAt": {
-    "$date": "2025-11-13T01:14:08.724Z"
+    "$date": "2025-11-18T01:02:28.944Z"
   },
   "updatedAt": {
-    "$date": "2025-11-16T06:27:27.011Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "sequenceNumber": 22,
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "timestamp": {
-    "$date": "2025-11-15T10:13:37.095Z"
-  },
-  "location": "",
-  "filename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "path": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "isDetected": true,
-  "hasIssue": false,
-  "issueType": "auto",
-  "status": "已检测",
-  "detectionResults": [],
-  "createdAt": {
-    "$date": "2025-11-15T10:13:37.095Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.161Z"
+    "$date": "2025-11-18T01:04:27.086Z"
   }
 }]

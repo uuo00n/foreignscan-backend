@@ -1,1700 +1,225 @@
 [{
   "_id": {
-    "$oid": "691484eeecbbc7167ea46d3c"
+    "$oid": "691b3433eb90954d0d418cf9"
   },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762952427593948600:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
+  "runId": "detect-image-691b0f0ea569d710bf43c739-1763390511682634800:20251117_691b00509f94c48d15692a1c.jpg",
   "confidenceThreshold": 0.25,
   "createdAt": {
-    "$date": "2025-11-12T13:00:30.222Z"
+    "$date": "2025-11-17T14:41:55.747Z"
   },
   "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
+    "$oid": "691b0f0ea569d710bf43c739"
   },
   "inferenceTimeMs": {
-    "$numberLong": "2627"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:00:30.222Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691484f1ecbbc7167ea46d42"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762952433156207100:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:00:33.179Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "22"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:00:33.179Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691485a1ecbbc7167ea46dbf"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762952608425934900:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:03:29.953Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "1527"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:03:29.953Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691485a8ecbbc7167ea46dc7"
-  },
-  "runId": "detect-image-690c4276399ed3dd831c9535-1762952615863914100:20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:03:36.015Z"
-  },
-  "imageId": {
-    "$oid": "690c4276399ed3dd831c9535"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "151"
+    "$numberLong": "4061"
   },
   "iouThreshold": 0.45,
   "items": [
     {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.7048190832138062,
+      "class": "airplane",
+      "classId": 4,
+      "confidence": 0.3583263158798218,
       "bbox": {
-        "x": 593.567138671875,
-        "y": 355.9373779296875,
-        "width": 1180.719482421875,
-        "height": 700.412353515625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "processedPath": "uploads\\images\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.7048190832138062
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:03:36.015Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691485c1ecbbc7167ea46df2"
-  },
-  "runId": "detect-image-690c4275399ed3dd831c9533-1762952641331226500:20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:04:01.367Z"
-  },
-  "imageId": {
-    "$oid": "690c4275399ed3dd831c9533"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "36"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9351468086242676,
-      "bbox": {
-        "x": 345.435302734375,
-        "y": 356.46527099609375,
-        "width": 685.17041015625,
-        "height": 706.3463134765625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "processedPath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.9351468086242676
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:04:01.367Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691486bfecbbc7167ea46e79"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762952895411545400:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:08:15.446Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "34"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:08:15.446Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69148e6dc7dc3b66d34296a1"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762954858825572600:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:41:01.442Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "2615"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\labels\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:41:01.442Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69148eeec7dc3b66d3429709"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1762954990017560000:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:43:10.096Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "77"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\labels\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:43:10.096Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69148ef0c7dc3b66d342970d"
-  },
-  "runId": "detect-image-690c4276399ed3dd831c9535-1762954991936534300:20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-12T13:43:12.123Z"
-  },
-  "imageId": {
-    "$oid": "690c4276399ed3dd831c9535"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "186"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.7048190832138062,
-      "bbox": {
-        "x": 593.567138671875,
-        "y": 355.9373779296875,
-        "width": 1180.719482421875,
-        "height": 700.412353515625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.7048190832138062
-  },
-  "updatedAt": {
-    "$date": "2025-11-12T13:43:12.123Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918358744d1047d0459ad48"
-  },
-  "runId": "detect-image-691530e09a172dd57a6cab4d-1763194244373857800:20251113_691343ce5296db9dff41afe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T08:10:47.004Z"
-  },
-  "imageId": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "2630"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "laptop",
-      "classId": 63,
-      "confidence": 0.9526054263114929,
-      "bbox": {
-        "x": 1083.55517578125,
-        "y": 501.64642333984375,
-        "width": 391.86724853515625,
-        "height": 319.44580078125
+        "x": 576.751953125,
+        "y": 356.7215576171875,
+        "width": 1128.38427734375,
+        "height": 709.3489990234375
       }
     },
     {
       "class": "person",
       "classId": 0,
-      "confidence": 0.9377701282501221,
+      "confidence": 0.33855971693992615,
       "bbox": {
-        "x": 535.5414428710938,
-        "y": 365.61004638671875,
-        "width": 699.1121826171875,
-        "height": 695.7269287109375
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.6024793982505798,
-      "bbox": {
-        "x": 1249.150634765625,
-        "y": 705.989013671875,
-        "width": 59.0859375,
-        "height": 27.051025390625
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.35514670610427856,
-      "bbox": {
-        "x": 1202.5711669921875,
-        "y": 675.0721435546875,
-        "width": 152.948974609375,
-        "height": 67.341796875
+        "x": 857.1929931640625,
+        "y": 545.7457275390625,
+        "width": 200.751953125,
+        "height": 342.1191101074219
       }
     }
   ],
   "modelName": "yolov8",
   "modelVersion": "",
-  "processedFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
+  "processedFilename": "20251117_691b00509f94c48d15692a1c.jpg",
+  "processedPath": "uploads\\labels\\691b00509f94c48d15692a1c\\20251117_691b00509f94c48d15692a1c.jpg",
   "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
+    "$oid": "691b00509f94c48d15692a1c"
   },
-  "sourceFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
+  "sourceFilename": "20251117_691b00509f94c48d15692a1c.jpg",
+  "sourcePath": "uploads\\images\\691b00509f94c48d15692a1c\\20251117_691b00509f94c48d15692a1c.jpg",
   "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 4,
-    "avgScore": 0.7120004147291183
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:10:47.004Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918361d44d1047d0459ad77"
-  },
-  "runId": "detect-image-690c419b399ed3dd831c952d-1763194397008426600:20251106_69083a1f5bb05c6af2be070b.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T08:13:17.068Z"
-  },
-  "imageId": {
-    "$oid": "690c419b399ed3dd831c952d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "59"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.8816714286804199,
-      "bbox": {
-        "x": 636.493896484375,
-        "y": 505.17724609375,
-        "width": 385.6474304199219,
-        "height": 417.7384033203125
-      }
-    },
-    {
-      "class": "bed",
-      "classId": 59,
-      "confidence": 0.7157764434814453,
-      "bbox": {
-        "x": 171.66929626464844,
-        "y": 463.16217041015625,
-        "width": 340.5479431152344,
-        "height": 491.390380859375
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_69083a1f5bb05c6af2be070b.jpg",
-  "processedPath": "uploads\\labels\\69083a1f5bb05c6af2be070b\\20251106_69083a1f5bb05c6af2be070b.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "20251106_69083a1f5bb05c6af2be070b.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\20251106_69083a1f5bb05c6af2be070b.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
+    "hasIssue": true,
+    "issueType": "auto",
     "objectCount": 2,
-    "avgScore": 0.7987239360809326
+    "avgScore": 0.34844301640987396
   },
   "updatedAt": {
-    "$date": "2025-11-15T08:13:17.068Z"
+    "$date": "2025-11-17T14:41:55.747Z"
   }
 },
 {
   "_id": {
-    "$oid": "6918363f44d1047d0459ad86"
+    "$oid": "691b368ceb90954d0d418d9d"
   },
-  "runId": "detect-image-690c419b399ed3dd831c952f-1763194431404267400:20251106_690710b5e3ea042cf37d4ff0.jpg",
+  "runId": "detect-image-691b0ec1a569d710bf43c737-1763391116466820000:20251117_691b005a9f94c48d15692a1e.jpg",
   "confidenceThreshold": 0.25,
   "createdAt": {
-    "$date": "2025-11-15T08:13:51.466Z"
+    "$date": "2025-11-17T14:51:56.680Z"
   },
   "imageId": {
-    "$oid": "690c419b399ed3dd831c952f"
+    "$oid": "691b0ec1a569d710bf43c737"
   },
   "inferenceTimeMs": {
-    "$numberLong": "62"
+    "$numberLong": "212"
   },
   "iouThreshold": 0.45,
   "items": [
     {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9351468086242676,
+      "class": "parking meter",
+      "classId": 12,
+      "confidence": 0.8640186786651611,
       "bbox": {
-        "x": 345.435302734375,
-        "y": 356.46527099609375,
-        "width": 685.17041015625,
-        "height": 706.3463134765625
+        "x": 752.3927001953125,
+        "y": 357.6027526855469,
+        "width": 609.298583984375,
+        "height": 710.3394165039062
       }
     }
   ],
   "modelName": "yolov8",
   "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
+  "processedFilename": "20251117_691b005a9f94c48d15692a1e.jpg",
+  "processedPath": "uploads\\labels\\691b005a9f94c48d15692a1e\\20251117_691b005a9f94c48d15692a1e.jpg",
   "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
+    "$oid": "691b005a9f94c48d15692a1e"
   },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.9351468086242676
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:13:51.466Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918364c44d1047d0459ad8f"
-  },
-  "runId": "detect-image-690c419b399ed3dd831c952f-1763194444157223000:20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T08:14:04.242Z"
-  },
-  "imageId": {
-    "$oid": "690c419b399ed3dd831c952f"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "84"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9351468086242676,
-      "bbox": {
-        "x": 345.435302734375,
-        "y": 356.46527099609375,
-        "width": 685.17041015625,
-        "height": 706.3463134765625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.9351468086242676
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:14:04.242Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918364c44d1047d0459ad92"
-  },
-  "runId": "detect-image-690c4276399ed3dd831c9535-1763194444179451400:20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T08:14:04.325Z"
-  },
-  "imageId": {
-    "$oid": "690c4276399ed3dd831c9535"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "145"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.7048190832138062,
-      "bbox": {
-        "x": 593.567138671875,
-        "y": 355.9373779296875,
-        "width": 1180.719482421875,
-        "height": 700.412353515625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.7048190832138062
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:14:04.325Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69183c0344d1047d0459b0cc"
-  },
-  "runId": "detect-image-69082d25aef2696241c54a15-1763195904563930500:95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T08:38:27.071Z"
-  },
-  "imageId": {
-    "$oid": "69082d25aef2696241c54a15"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "2506"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "processedPath": "uploads\\labels\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "sceneId": {
-    "$oid": "69082d25aef2696241c54a14"
-  },
-  "sourceFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "sourcePath": "uploads\\images\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T08:38:27.071Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918450044d1047d0459b353"
-  },
-  "runId": "detect-image-6909b6a6d1373f81fe5413d7-1763198208041014300:20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T09:16:48.232Z"
-  },
-  "imageId": {
-    "$oid": "6909b6a6d1373f81fe5413d7"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "188"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "keyboard",
-      "classId": 66,
-      "confidence": 0.4244355261325836,
-      "bbox": {
-        "x": 636.9369506835938,
-        "y": 350.7962646484375,
-        "width": 1273.8739013671875,
-        "height": 699.9002685546875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "sourceFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.4244355261325836
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T09:16:48.232Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918507f44d1047d0459b6b8"
-  },
-  "runId": "detect-image-691530e09a172dd57a6cab4d-1763201151094789800:20251113_691343ce5296db9dff41afe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:05:51.236Z"
-  },
-  "imageId": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "140"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "laptop",
-      "classId": 63,
-      "confidence": 0.9526054263114929,
-      "bbox": {
-        "x": 1083.55517578125,
-        "y": 501.64642333984375,
-        "width": 391.86724853515625,
-        "height": 319.44580078125
-      }
-    },
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9377701282501221,
-      "bbox": {
-        "x": 535.5414428710938,
-        "y": 365.61004638671875,
-        "width": 699.1121826171875,
-        "height": 695.7269287109375
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.6024793982505798,
-      "bbox": {
-        "x": 1249.150634765625,
-        "y": 705.989013671875,
-        "width": 59.0859375,
-        "height": 27.051025390625
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.35514670610427856,
-      "bbox": {
-        "x": 1202.5711669921875,
-        "y": 675.0721435546875,
-        "width": 152.948974609375,
-        "height": 67.341796875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "sourceFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 4,
-    "avgScore": 0.7120004147291183
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:05:51.236Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918513e44d1047d0459b781"
-  },
-  "runId": "detect-image-691530e09a172dd57a6cab4d-1763201342644425000:20251113_691343ce5296db9dff41afe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:09:02.849Z"
-  },
-  "imageId": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "204"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "laptop",
-      "classId": 63,
-      "confidence": 0.9526054263114929,
-      "bbox": {
-        "x": 1083.55517578125,
-        "y": 501.64642333984375,
-        "width": 391.86724853515625,
-        "height": 319.44580078125
-      }
-    },
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9377701282501221,
-      "bbox": {
-        "x": 535.5414428710938,
-        "y": 365.61004638671875,
-        "width": 699.1121826171875,
-        "height": 695.7269287109375
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.6024793982505798,
-      "bbox": {
-        "x": 1249.150634765625,
-        "y": 705.989013671875,
-        "width": 59.0859375,
-        "height": 27.051025390625
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.35514670610427856,
-      "bbox": {
-        "x": 1202.5711669921875,
-        "y": 675.0721435546875,
-        "width": 152.948974609375,
-        "height": 67.341796875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "sourceFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 4,
-    "avgScore": 0.7120004147291183
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:09:02.849Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918517e44d1047d0459b7c3"
-  },
-  "runId": "detect-image-6909b6a6d1373f81fe5413d7-1763201406646144600:20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:10:06.835Z"
-  },
-  "imageId": {
-    "$oid": "6909b6a6d1373f81fe5413d7"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "188"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "keyboard",
-      "classId": 66,
-      "confidence": 0.4244355261325836,
-      "bbox": {
-        "x": 636.9369506835938,
-        "y": 350.7962646484375,
-        "width": 1273.8739013671875,
-        "height": 699.9002685546875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "sourceFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.4244355261325836
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:10:06.835Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918518344d1047d0459b7ce"
-  },
-  "runId": "detect-image-6909b6a6d1373f81fe5413d7-1763201411123813700:20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:10:11.231Z"
-  },
-  "imageId": {
-    "$oid": "6909b6a6d1373f81fe5413d7"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "107"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "keyboard",
-      "classId": 66,
-      "confidence": 0.4244355261325836,
-      "bbox": {
-        "x": 636.9369506835938,
-        "y": 350.7962646484375,
-        "width": 1273.8739013671875,
-        "height": 699.9002685546875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "sourceFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 1,
-    "avgScore": 0.4244355261325836
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:10:11.231Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918518e44d1047d0459b7df"
-  },
-  "runId": "detect-image-69082d25aef2696241c54a15-1763201422217005300:95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:10:22.354Z"
-  },
-  "imageId": {
-    "$oid": "69082d25aef2696241c54a15"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "137"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "processedPath": "uploads\\labels\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "sceneId": {
-    "$oid": "69082d25aef2696241c54a14"
-  },
-  "sourceFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "sourcePath": "uploads\\images\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:10:22.354Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918525b44d1047d0459b89b"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763201627018815600:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:13:47.430Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "409"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:13:47.430Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918525f44d1047d0459b8a6"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763201631496361800:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:13:51.854Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "357"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:13:51.854Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691853b144d1047d0459b9cf"
-  },
-  "runId": "detect-image-691530e09a172dd57a6cab4d-1763201969649394700:20251113_691343ce5296db9dff41afe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:19:29.717Z"
-  },
-  "imageId": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "66"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "laptop",
-      "classId": 63,
-      "confidence": 0.9526054263114929,
-      "bbox": {
-        "x": 1083.55517578125,
-        "y": 501.64642333984375,
-        "width": 391.86724853515625,
-        "height": 319.44580078125
-      }
-    },
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9377701282501221,
-      "bbox": {
-        "x": 535.5414428710938,
-        "y": 365.61004638671875,
-        "width": 699.1121826171875,
-        "height": 695.7269287109375
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.6024793982505798,
-      "bbox": {
-        "x": 1249.150634765625,
-        "y": 705.989013671875,
-        "width": 59.0859375,
-        "height": 27.051025390625
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.35514670610427856,
-      "bbox": {
-        "x": 1202.5711669921875,
-        "y": 675.0721435546875,
-        "width": 152.948974609375,
-        "height": 67.341796875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "sourceFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 4,
-    "avgScore": 0.7120004147291183
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:19:29.717Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691853bf44d1047d0459b9ea"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763201983505530600:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:19:43.873Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "366"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:19:43.873Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691853f244d1047d0459ba25"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763202033780796600:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:20:34.149Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "368"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:20:34.149Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "6918586d44d1047d0459bf05"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763203181641731100:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T10:39:41.833Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "190"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T10:39:41.833Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69185e5a44d1047d0459c596"
-  },
-  "runId": "detect-image-690c41b3399ed3dd831c9531-1763204697992919500:20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-15T11:04:58.314Z"
-  },
-  "imageId": {
-    "$oid": "690c41b3399ed3dd831c9531"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "320"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9351468086242676,
-      "bbox": {
-        "x": 345.435302734375,
-        "y": 356.46527099609375,
-        "width": 685.17041015625,
-        "height": 706.3463134765625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 1,
-    "avgScore": 0.9351468086242676
-  },
-  "updatedAt": {
-    "$date": "2025-11-15T11:04:58.314Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196d072c9b29a24d499133"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763273987269647800:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:19:51.813Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "4543"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:19:51.813Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d499205"
-  },
-  "runId": "detect-image-691530e09a172dd57a6cab4d-1763274446800165800:20251113_691343ce5296db9dff41afe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.010Z"
-  },
-  "imageId": {
-    "$oid": "691530e09a172dd57a6cab4d"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "208"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "laptop",
-      "classId": 63,
-      "confidence": 0.9526054263114929,
-      "bbox": {
-        "x": 1083.55517578125,
-        "y": 501.64642333984375,
-        "width": 391.86724853515625,
-        "height": 319.44580078125
-      }
-    },
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9377701282501221,
-      "bbox": {
-        "x": 535.5414428710938,
-        "y": 365.61004638671875,
-        "width": 699.1121826171875,
-        "height": 695.7269287109375
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.6024793982505798,
-      "bbox": {
-        "x": 1249.150634765625,
-        "y": 705.989013671875,
-        "width": 59.0859375,
-        "height": 27.051025390625
-      }
-    },
-    {
-      "class": "mouse",
-      "classId": 64,
-      "confidence": 0.35514670610427856,
-      "bbox": {
-        "x": 1202.5711669921875,
-        "y": 675.0721435546875,
-        "width": 152.948974609375,
-        "height": 67.341796875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "sourceFilename": "20251113_691343ce5296db9dff41afe6.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe6\\20251113_691343ce5296db9dff41afe6.jpg",
-  "summary": {
-    "hasIssue": true,
-    "issueType": "auto",
-    "objectCount": 4,
-    "avgScore": 0.7120004147291183
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.010Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d499208"
-  },
-  "runId": "detect-image-691852516c177713cac9d029-1763274446800165800:4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.160Z"
-  },
-  "imageId": {
-    "$oid": "691852516c177713cac9d029"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "359"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "processedPath": "uploads\\labels\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "sourceFilename": "4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "sourcePath": "uploads\\images\\691343ce5296db9dff41afe2\\4306a229-d5d3-459e-bf4a-cb751317a154.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.160Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d49920f"
-  },
-  "runId": "detect-image-690c41b3399ed3dd831c9531-1763274446804648700:20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.199Z"
-  },
-  "imageId": {
-    "$oid": "690c41b3399ed3dd831c9531"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "394"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.9351468086242676,
-      "bbox": {
-        "x": 345.435302734375,
-        "y": 356.46527099609375,
-        "width": 685.17041015625,
-        "height": 706.3463134765625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4ff0\\20251106_690710b5e3ea042cf37d4ff0.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 1,
-    "avgScore": 0.9351468086242676
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.199Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d499214"
-  },
-  "runId": "detect-image-690c4276399ed3dd831c9535-1763274446804276100:20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.288Z"
-  },
-  "imageId": {
-    "$oid": "690c4276399ed3dd831c9535"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "483"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "person",
-      "classId": 0,
-      "confidence": 0.7048190832138062,
-      "bbox": {
-        "x": 593.567138671875,
-        "y": 355.9373779296875,
-        "width": 1180.719482421875,
-        "height": 700.412353515625
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "sourceFilename": "20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fe6\\20251106_690710b5e3ea042cf37d4fe6.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 1,
-    "avgScore": 0.7048190832138062
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.288Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d499219"
-  },
-  "runId": "detect-image-69118d5d4d186196f1760ba3-1763274446804276100:a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.419Z"
-  },
-  "imageId": {
-    "$oid": "69118d5d4d186196f1760ba3"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "613"
-  },
-  "iouThreshold": 0.45,
-  "items": [],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "processedPath": "uploads\\labels\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "sourceFilename": "a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "sourcePath": "uploads\\images\\69083a1f5bb05c6af2be070b\\a681928a-0bea-4836-9868-c6a968523bf8.jpg",
-  "summary": {
-    "hasIssue": false,
-    "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
-  },
-  "updatedAt": {
-    "$date": "2025-11-16T06:27:27.419Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "69196ecf2c9b29a24d49921e"
-  },
-  "runId": "detect-image-6909b6a6d1373f81fe5413d7-1763274446807575300:20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "confidenceThreshold": 0.25,
-  "createdAt": {
-    "$date": "2025-11-16T06:27:27.490Z"
-  },
-  "imageId": {
-    "$oid": "6909b6a6d1373f81fe5413d7"
-  },
-  "inferenceTimeMs": {
-    "$numberLong": "682"
-  },
-  "iouThreshold": 0.45,
-  "items": [
-    {
-      "class": "keyboard",
-      "classId": 66,
-      "confidence": 0.4244355261325836,
-      "bbox": {
-        "x": 636.9369506835938,
-        "y": 350.7962646484375,
-        "width": 1273.8739013671875,
-        "height": 699.9002685546875
-      }
-    }
-  ],
-  "modelName": "yolov8",
-  "modelVersion": "",
-  "processedFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "processedPath": "uploads\\labels\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "sourceFilename": "20251104_690710b5e3ea042cf37d4fdd.jpg",
-  "sourcePath": "uploads\\images\\690710b5e3ea042cf37d4fdd\\20251104_690710b5e3ea042cf37d4fdd.jpg",
+  "sourceFilename": "20251117_691b005a9f94c48d15692a1e.jpg",
+  "sourcePath": "uploads\\images\\691b005a9f94c48d15692a1e\\20251117_691b005a9f94c48d15692a1e.jpg",
   "summary": {
     "hasIssue": true,
     "issueType": "auto",
     "objectCount": 1,
-    "avgScore": 0.4244355261325836
+    "avgScore": 0.8640186786651611
   },
   "updatedAt": {
-    "$date": "2025-11-16T06:27:27.490Z"
+    "$date": "2025-11-17T14:51:56.680Z"
   }
 },
 {
   "_id": {
-    "$oid": "69196ecf2c9b29a24d499223"
+    "$oid": "691b368ceb90954d0d418da2"
   },
-  "runId": "detect-image-69082d25aef2696241c54a15-1763274446808348200:95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
+  "runId": "detect-image-691b0f0ea569d710bf43c739-1763391116466217100:20251117_691b00509f94c48d15692a1c.jpg",
   "confidenceThreshold": 0.25,
   "createdAt": {
-    "$date": "2025-11-16T06:27:27.575Z"
+    "$date": "2025-11-17T14:51:56.751Z"
   },
   "imageId": {
-    "$oid": "69082d25aef2696241c54a15"
+    "$oid": "691b0f0ea569d710bf43c739"
   },
   "inferenceTimeMs": {
-    "$numberLong": "766"
+    "$numberLong": "284"
   },
   "iouThreshold": 0.45,
-  "items": [],
+  "items": [
+    {
+      "class": "airplane",
+      "classId": 4,
+      "confidence": 0.3583263158798218,
+      "bbox": {
+        "x": 576.751953125,
+        "y": 356.7215576171875,
+        "width": 1128.38427734375,
+        "height": 709.3489990234375
+      }
+    },
+    {
+      "class": "person",
+      "classId": 0,
+      "confidence": 0.33855971693992615,
+      "bbox": {
+        "x": 857.1929931640625,
+        "y": 545.7457275390625,
+        "width": 200.751953125,
+        "height": 342.1191101074219
+      }
+    }
+  ],
   "modelName": "yolov8",
   "modelVersion": "",
-  "processedFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "processedPath": "uploads\\labels\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
+  "processedFilename": "20251117_691b00509f94c48d15692a1c.jpg",
+  "processedPath": "uploads\\labels\\691b00509f94c48d15692a1c\\20251117_691b00509f94c48d15692a1c.jpg",
   "sceneId": {
-    "$oid": "69082d25aef2696241c54a14"
+    "$oid": "691b00509f94c48d15692a1c"
   },
-  "sourceFilename": "95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
-  "sourcePath": "uploads\\images\\69082d25aef2696241c54a14\\95651a9a-6885-4fee-8095-b8efa5a7f678.JPG",
+  "sourceFilename": "20251117_691b00509f94c48d15692a1c.jpg",
+  "sourcePath": "uploads\\images\\691b00509f94c48d15692a1c\\20251117_691b00509f94c48d15692a1c.jpg",
   "summary": {
-    "hasIssue": false,
+    "hasIssue": true,
     "issueType": "auto",
-    "objectCount": 0,
-    "avgScore": 0
+    "objectCount": 2,
+    "avgScore": 0.34844301640987396
   },
   "updatedAt": {
-    "$date": "2025-11-16T06:27:27.575Z"
+    "$date": "2025-11-17T14:51:56.751Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691bc61b32368e277987eafb"
+  },
+  "runId": "detect-image-691bc5a468d24f224ede8f10-1763427862425435900:20251118_691b00749f94c48d15692a20.jpg",
+  "confidenceThreshold": 0.25,
+  "createdAt": {
+    "$date": "2025-11-18T01:04:27.078Z"
+  },
+  "imageId": {
+    "$oid": "691bc5a468d24f224ede8f10"
+  },
+  "inferenceTimeMs": {
+    "$numberLong": "4652"
+  },
+  "iouThreshold": 0.45,
+  "items": [
+    {
+      "class": "toilet",
+      "classId": 61,
+      "confidence": 0.8676560521125793,
+      "bbox": {
+        "x": 1124.7755126953125,
+        "y": 313.17596435546875,
+        "width": 308.59912109375,
+        "height": 622.3350830078125
+      }
+    },
+    {
+      "class": "bench",
+      "classId": 13,
+      "confidence": 0.55301833152771,
+      "bbox": {
+        "x": 435.731201171875,
+        "y": 355.0483093261719,
+        "width": 866.3807373046875,
+        "height": 710.0966186523438
+      }
+    }
+  ],
+  "modelName": "yolov8",
+  "modelVersion": "",
+  "processedFilename": "20251118_691b00749f94c48d15692a20.jpg",
+  "processedPath": "uploads\\labels\\691b00749f94c48d15692a20\\20251118_691b00749f94c48d15692a20.jpg",
+  "sceneId": {
+    "$oid": "691b00749f94c48d15692a20"
+  },
+  "sourceFilename": "20251118_691b00749f94c48d15692a20.jpg",
+  "sourcePath": "uploads\\images\\691b00749f94c48d15692a20\\20251118_691b00749f94c48d15692a20.jpg",
+  "summary": {
+    "hasIssue": true,
+    "issueType": "auto",
+    "objectCount": 2,
+    "avgScore": 0.7103371918201447
+  },
+  "updatedAt": {
+    "$date": "2025-11-18T01:04:27.078Z"
   }
 }]

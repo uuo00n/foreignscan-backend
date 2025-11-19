@@ -1,144 +1,108 @@
 [{
   "_id": {
-    "$oid": "691343ce5296db9dff41afe0"
+    "$oid": "691b01409f94c48d15692a26"
   },
   "sceneId": {
-    "$oid": "691343ce5296db9dff41afde"
+    "$oid": "691b00319f94c48d15692a1a"
   },
-  "name": "机器设备场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads\\styles\\001-machine\\example.jpg",
-  "createdAt": {
-    "$date": "2025-11-11T14:10:22.235Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-11T14:10:22.235Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691343ce5296db9dff41afe4"
-  },
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe2"
-  },
-  "name": "鼓形设备场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads\\styles\\002-drum\\example.jpg",
-  "createdAt": {
-    "$date": "2025-11-11T14:10:22.255Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-11T14:10:22.255Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "691343ce5296db9dff41afe8"
-  },
-  "sceneId": {
-    "$oid": "691343ce5296db9dff41afe6"
-  },
-  "name": "挖掘机场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads\\styles\\003-excavator\\example.jpg",
-  "createdAt": {
-    "$date": "2025-11-11T14:10:22.256Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-11T14:10:22.256Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fdf"
-  },
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fdd"
-  },
-  "name": "机器设备场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads/styles/001-machine/example.jpg",
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.366Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.366Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4fe8"
-  },
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4fe6"
-  },
-  "name": "鼓形设备场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads/styles/002-drum/example.jpg",
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.369Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "690710b5e3ea042cf37d4ff2"
-  },
-  "sceneId": {
-    "$oid": "690710b5e3ea042cf37d4ff0"
-  },
-  "name": "挖掘机场景样式",
-  "description": "场景的样式图",
-  "filename": "example.jpg",
-  "path": "uploads/styles/003-excavator/example.jpg",
-  "createdAt": {
-    "$date": "2025-11-02T08:05:09.371Z"
-  },
-  "updatedAt": {
-    "$date": "2025-11-02T08:05:09.371Z"
-  }
-},
-{
-  "_id": {
-    "$oid": "690a10535d7e15eeaa4482b8"
-  },
-  "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
-  },
-  "name": "gg",
+  "name": "",
   "description": "",
-  "filename": "style_20251104224019.JPG",
-  "path": "uploads/styles/69083a1f5bb05c6af2be070b/style_20251104224019.JPG",
+  "filename": "style_20251117190432.jpg",
+  "path": "uploads\\styles\\691b00319f94c48d15692a1a\\style_20251117190432.jpg",
   "createdAt": {
-    "$date": "2025-11-04T14:40:19.626Z"
+    "$date": "2025-11-17T11:04:32.203Z"
   },
   "updatedAt": {
-    "$date": "2025-11-04T14:40:19.626Z"
+    "$date": "2025-11-17T11:04:32.203Z"
   }
 },
 {
   "_id": {
-    "$oid": "690a10555d7e15eeaa4482ba"
+    "$oid": "691b01789f94c48d15692a28"
   },
   "sceneId": {
-    "$oid": "69083a1f5bb05c6af2be070b"
+    "$oid": "691b00509f94c48d15692a1c"
   },
-  "name": "gg",
+  "name": "",
   "description": "",
-  "filename": "style_20251104224021.JPG",
-  "path": "uploads/styles/69083a1f5bb05c6af2be070b/style_20251104224021.JPG",
+  "filename": "style_20251117190528.jpg",
+  "path": "uploads\\styles\\691b00509f94c48d15692a1c\\style_20251117190528.jpg",
   "createdAt": {
-    "$date": "2025-11-04T14:40:21.144Z"
+    "$date": "2025-11-17T11:05:28.584Z"
   },
   "updatedAt": {
-    "$date": "2025-11-04T14:40:21.144Z"
+    "$date": "2025-11-17T11:05:28.584Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691b01b69f94c48d15692a2a"
+  },
+  "sceneId": {
+    "$oid": "691b005a9f94c48d15692a1e"
+  },
+  "name": "",
+  "description": "",
+  "filename": "style_20251117190630.jpg",
+  "path": "uploads\\styles\\691b005a9f94c48d15692a1e\\style_20251117190630.jpg",
+  "createdAt": {
+    "$date": "2025-11-17T11:06:30.264Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-17T11:06:30.264Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691b01d49f94c48d15692a2c"
+  },
+  "sceneId": {
+    "$oid": "691b00749f94c48d15692a20"
+  },
+  "name": "",
+  "description": "",
+  "filename": "style_20251117190700.jpg",
+  "path": "uploads\\styles\\691b00749f94c48d15692a20\\style_20251117190700.jpg",
+  "createdAt": {
+    "$date": "2025-11-17T11:07:00.474Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-17T11:07:00.474Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691b01f69f94c48d15692a2e"
+  },
+  "sceneId": {
+    "$oid": "691b007b9f94c48d15692a22"
+  },
+  "name": "",
+  "description": "",
+  "filename": "style_20251117190734.jpg",
+  "path": "uploads\\styles\\691b007b9f94c48d15692a22\\style_20251117190734.jpg",
+  "createdAt": {
+    "$date": "2025-11-17T11:07:34.946Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-17T11:07:34.946Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "691b02059f94c48d15692a30"
+  },
+  "sceneId": {
+    "$oid": "691b00829f94c48d15692a24"
+  },
+  "name": "",
+  "description": "",
+  "filename": "style_20251117190749.jpg",
+  "path": "uploads\\styles\\691b00829f94c48d15692a24\\style_20251117190749.jpg",
+  "createdAt": {
+    "$date": "2025-11-17T11:07:49.501Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-17T11:07:49.501Z"
   }
 }]

@@ -177,20 +177,19 @@ func CreateImageDetection(c *gin.Context) {
     // 兜底生成 Summary（当请求未提供或为空且 items 非空时）
     if req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0 {
         sum := 0.0
-        hasNonPerson := false
+        hasHole := false
+        allBolts := len(req.Items) > 0
         for _, it := range req.Items {
             sum += it.Confidence
-            if !strings.EqualFold(it.Class, "person") {
-                hasNonPerson = true
-            }
+            if strings.EqualFold(it.Class, "hole") { hasHole = true }
+            if !strings.EqualFold(it.Class, "Bolts") { allBolts = false }
         }
         avg := 0.0
-        if len(req.Items) > 0 {
-            avg = sum / float64(len(req.Items))
-        }
-        hi := (len(req.Items) == 0) || hasNonPerson
+        if len(req.Items) > 0 { avg = sum / float64(len(req.Items)) }
+        hi := (len(req.Items) == 0) || hasHole || !allBolts
         itype := "auto"
         if len(req.Items) == 0 { itype = "no_object" }
+        if hasHole { itype = "hole" }
         req.Summary = models.DetectionSummary{HasIssue: hi, IssueType: itype, ObjectCount: len(req.Items), AvgScore: avg}
     }
 

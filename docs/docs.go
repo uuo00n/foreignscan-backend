@@ -1721,7 +1721,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "modelName": {
-                    "description": "模型名称，默认 \"yolov8\"",
+                    "description": "模型名称，默认 \"best\"",
                     "type": "string"
                 },
                 "modelVersion": {
@@ -1729,7 +1729,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "weights": {
-                    "description": "模型权重文件路径或名称，默认 yolov8s.pt",
+                    "description": "模型权重文件路径或名称，默认 best.pt",
                     "type": "string"
                 }
             }

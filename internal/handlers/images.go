@@ -328,13 +328,14 @@ func GetImageDetail(c *gin.Context) {
 }
 
 // GetImagesByStatusTime godoc
-// @Summary 根据状态或状态+时间范围筛选图片
-// @Description 按状态（必填）与可选的时间范围（start/end）筛选图片。时间格式支持 YYYY-MM-DD 或 RFC3339（如 2025-11-10T15:00:00Z）。
+// @Summary 根据多条件筛选图片（状态/时间/场景）
+// @Description 支持按状态、场景ID、时间范围（start/end）筛选图片。
 // @Tags images
 // @Accept json
 // @Produce json
-// @Param status query string true "状态（已检测/未检测）"
+// @Param status query string false "状态（已检测/未检测）"
 // @Param hasIssue query string false "是否存在问题（true/false，仅在status=已检测时生效）"
+// @Param sceneId query string false "场景ID"
 // @Param start query string false "起始时间（YYYY-MM-DD 或 RFC3339）"
 // @Param end query string false "结束时间（YYYY-MM-DD 或 RFC3339）"
 // @Success 200 {object} map[string]interface{} "成功获取筛选结果"
@@ -342,36 +343,38 @@ func GetImageDetail(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /images/filter [get]
 func GetImagesByStatusTime(c *gin.Context) {
-    // 1) 读取并校验状态参数（必填）
+    // 1) 读取参数
     status := c.Query("status")
-    if status == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "status为必填参数"})
-        return
-    }
-    // 允许的状态值（中文）
-    valid := map[string]bool{
-        models.ImageStatusUndetected: true,
-        models.ImageStatusDetected:   true,
-    }
-    if !valid[status] {
-        c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "status仅支持：已检测/未检测"})
-        return
-    }
-
-    // 2) 解析时间参数（可选）。支持两种格式：
-    // - 日期：YYYY-MM-DD（自动扩展为当天的00:00:00至23:59:59）
-    // - RFC3339：如 2025-11-10T15:00:00Z
+    sceneIDStr := c.Query("sceneId")
     startStr := c.Query("start")
     endStr := c.Query("end")
     hasIssueStr := c.Query("hasIssue")
-    hasIssueParamProvided := false
-    hasIssueVal := false
-    if hasIssueStr != "" {
-        hasIssueParamProvided = true
-        if hasIssueStr == "true" || hasIssueStr == "1" { hasIssueVal = true }
-        if hasIssueStr == "false" || hasIssueStr == "0" { /* remains false */ }
+
+    // 2) 构建筛选输入
+    input := models.FindImagesByFilterInput{
+        Status: status,
     }
 
+    // 解析 hasIssue
+    if hasIssueStr != "" {
+        val := false
+        if hasIssueStr == "true" || hasIssueStr == "1" {
+            val = true
+        }
+        input.HasIssue = &val
+    }
+
+    // 解析 SceneID
+    if sceneIDStr != "" {
+        sid, err := primitive.ObjectIDFromHex(sceneIDStr)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的sceneId"})
+            return
+        }
+        input.SceneID = sid
+    }
+
+    // 解析时间函数
     parseTime := func(s string, isStart bool) (time.Time, error) {
         if len(s) == 10 { // YYYY-MM-DD
             d, err := time.Parse("2006-01-02", s)
@@ -387,66 +390,41 @@ func GetImagesByStatusTime(c *gin.Context) {
         return time.Parse(time.RFC3339, s)
     }
 
-    var (
-        images []models.Image
-        err    error
-    )
-
-    // 3) 根据是否提供时间参数选择查询方法
-    if startStr == "" && endStr == "" {
-        // 仅按状态/flags筛选
-        if status == models.ImageStatusUndetected {
-            images, err = models.FindByFlags(false, false, false)
-        } else {
-            // 已检测，可选按 hasIssue 进一步筛选
-            images, err = models.FindByFlags(true, hasIssueParamProvided, hasIssueVal)
-        }
+    // 解析时间范围
+    if startStr != "" {
+        t, err := parseTime(startStr, true)
         if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
+            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "start时间格式错误"})
             return
         }
-    } else {
-        // 按状态+时间范围筛选
-        var (
-            start time.Time
-            end   time.Time
-        )
-        if startStr != "" {
-            start, err = parseTime(startStr, true)
-            if err != nil {
-                c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "start时间格式错误，支持YYYY-MM-DD或RFC3339"})
-                return
-            }
-        } else {
-            // 未提供start，则默认使用最早时间
-            start = time.Unix(0, 0)
-        }
-        if endStr != "" {
-            end, err = parseTime(endStr, false)
-            if err != nil {
-                c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "end时间格式错误，支持YYYY-MM-DD或RFC3339"})
-                return
-            }
-        } else {
-            // 未提供end，则默认当前时间
-            end = time.Now()
-        }
-
-        if status == models.ImageStatusUndetected {
-            images, err = models.FindByFlagsAndTimeRange(false, false, false, start, end)
-        } else {
-            images, err = models.FindByFlagsAndTimeRange(true, hasIssueParamProvided, hasIssueVal, start, end)
-        }
+        input.StartDate = t
+    }
+    if endStr != "" {
+        t, err := parseTime(endStr, false)
         if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
+            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "end时间格式错误"})
             return
         }
+        input.EndDate = t
+    }
+
+    // 3) 执行查询
+    images, err := models.FindImagesByFilter(input)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
+        return
     }
 
     // 4) 返回结果
     c.JSON(http.StatusOK, gin.H{
         "success": true,
-        "filters": gin.H{"status": status, "start": startStr, "end": endStr, "hasIssue": hasIssueStr},
+        "filters": gin.H{
+            "status": status, 
+            "sceneId": sceneIDStr,
+            "start": startStr, 
+            "end": endStr, 
+            "hasIssue": hasIssueStr,
+        },
         "count":   len(images),
         "images":  images,
     })

@@ -345,6 +345,73 @@ func FindByFlagsAndTimeRange(isDetected bool, hasIssueParamProvided bool, hasIss
     return images, nil
 }
 
+// FindImagesByFilterInput 筛选参数结构体
+type FindImagesByFilterInput struct {
+	Status      string             // "已检测"/"未检测"，为空则不筛选状态
+	HasIssue    *bool              // true/false，为nil则不筛选
+	SceneID     primitive.ObjectID // Zero ObjectID则不筛选
+	StartDate   time.Time          // Zero time则不筛选
+	EndDate     time.Time          // Zero time则不筛选
+}
+
+// FindImagesByFilter 通用筛选函数
+func FindImagesByFilter(input FindImagesByFilterInput) ([]Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := database.GetCollection("images")
+	filter := bson.M{}
+
+	// 1. 状态筛选 (兼容 status 字段和 isDetected 字段)
+	if input.Status != "" {
+		if input.Status == ImageStatusUndetected {
+			filter["isDetected"] = false
+		} else if input.Status == ImageStatusDetected {
+			filter["isDetected"] = true
+		} else {
+			// 如果是其他状态字符串，尝试匹配 status 字段
+			filter["status"] = input.Status
+		}
+	}
+
+	// 2. 是否有问题筛选
+	if input.HasIssue != nil {
+		filter["hasIssue"] = *input.HasIssue
+	}
+
+	// 3. 场景筛选
+	if !input.SceneID.IsZero() {
+		filter["sceneId"] = input.SceneID
+	}
+
+	// 4. 时间范围筛选
+	if !input.StartDate.IsZero() || !input.EndDate.IsZero() {
+		dateFilter := bson.M{}
+		if !input.StartDate.IsZero() {
+			dateFilter["$gte"] = input.StartDate
+		}
+		if !input.EndDate.IsZero() {
+			dateFilter["$lte"] = input.EndDate
+		}
+		filter["createdAt"] = dateFilter
+	}
+
+	// 按创建时间降序排列
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	
+	cursor, err := collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var images []Image
+	if err := cursor.All(ctx, &images); err != nil {
+		return nil, err
+	}
+	return images, nil
+}
+
 // Save 保存图片
 func (i *Image) Save() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

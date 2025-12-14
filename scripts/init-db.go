@@ -1,23 +1,23 @@
 package main
 
 import (
-    "bufio"
-    "context"
-    "flag"
-    "fmt"
-    "log"
-    "os"
-    "path/filepath"
-    "strings"
-    "time"
+	"bufio"
+	"context"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
-    "foreignscan/internal/config"
-    "foreignscan/internal/database"
-    "foreignscan/internal/models"
+	"foreignscan/internal/config"
+	"foreignscan/internal/database"
+	"foreignscan/internal/models"
 
-    "go.mongodb.org/mongo-driver/bson"
-    "go.mongodb.org/mongo-driver/bson/primitive"
-    "go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // FolderMapping 文件夹映射关系
@@ -115,103 +115,101 @@ func createImageRecord(file os.FileInfo, seqNum int, sceneID primitive.ObjectID,
 		HasIssue:         false,
 		IssueType:        "",
 		Status:           models.ImageStatusUndetected,
-		DetectionResults: []interface{}{},
+		DetectionResults: []models.DetectionItem{},
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}
 }
 
 func ensureImageIndexes() error {
-    col := database.GetCollection("images")
-    ctx := context.Background()
-    models := []mongo.IndexModel{
-        {Keys: bson.D{{Key: "sceneId", Value: 1}}},
-        {Keys: bson.D{{Key: "createdAt", Value: -1}}},
-        {Keys: bson.D{{Key: "status", Value: 1}}},
-        {Keys: bson.D{{Key: "isDetected", Value: 1}}},
-        {Keys: bson.D{{Key: "hasIssue", Value: 1}}},
-    }
-    _, err := col.Indexes().CreateMany(ctx, models)
-    return err
+	col := database.GetCollection("images")
+	ctx := context.Background()
+	models := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "sceneId", Value: 1}}},
+		{Keys: bson.D{{Key: "createdAt", Value: -1}}},
+		{Keys: bson.D{{Key: "status", Value: 1}}},
+		{Keys: bson.D{{Key: "isDetected", Value: 1}}},
+		{Keys: bson.D{{Key: "hasIssue", Value: 1}}},
+	}
+	_, err := col.Indexes().CreateMany(ctx, models)
+	return err
 }
 
 func ensureSceneIndexes() error {
-    col := database.GetCollection("scenes")
-    ctx := context.Background()
-    models := []mongo.IndexModel{
-        {Keys: bson.D{{Key: "createdAt", Value: -1}}},
-    }
-    _, err := col.Indexes().CreateMany(ctx, models)
-    return err
+	col := database.GetCollection("scenes")
+	ctx := context.Background()
+	models := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "createdAt", Value: -1}}},
+	}
+	_, err := col.Indexes().CreateMany(ctx, models)
+	return err
 }
 
 func ensureStyleImageIndexes() error {
-    col := database.GetCollection("styleImages")
-    ctx := context.Background()
-    models := []mongo.IndexModel{
-        {Keys: bson.D{{Key: "sceneId", Value: 1}}},
-        {Keys: bson.D{{Key: "createdAt", Value: -1}}},
-    }
-    _, err := col.Indexes().CreateMany(ctx, models)
-    return err
+	col := database.GetCollection("styleImages")
+	ctx := context.Background()
+	models := []mongo.IndexModel{
+		{Keys: bson.D{{Key: "sceneId", Value: 1}}},
+		{Keys: bson.D{{Key: "createdAt", Value: -1}}},
+	}
+	_, err := col.Indexes().CreateMany(ctx, models)
+	return err
 }
 
-
-
 func main() {
-    var (
-        interactive bool
-        mongoURI    string
-        dbName      string
-    )
+	var (
+		interactive bool
+		mongoURI    string
+		dbName      string
+	)
 
-    flag.BoolVar(&interactive, "interactive", true, "是否使用交互模式")
-    flag.StringVar(&mongoURI, "mongo-uri", "mongodb://localhost:27017", "MongoDB连接URI")
-    flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
-    flag.Parse()
+	flag.BoolVar(&interactive, "interactive", true, "是否使用交互模式")
+	flag.StringVar(&mongoURI, "mongo-uri", "mongodb://localhost:27017", "MongoDB连接URI")
+	flag.StringVar(&dbName, "db-name", "foreignscan", "数据库名称")
+	flag.Parse()
 
-    if interactive {
-        fmt.Println("=== 数据库结构初始化 ===")
-        mongoURI = getUserInput("MongoDB连接URI", mongoURI)
-        dbName = getUserInput("数据库名称", dbName)
-        fmt.Println("\n=== 初始化配置 ===")
-        fmt.Printf("MongoDB URI: %s\n", mongoURI)
-        fmt.Printf("数据库名称: %s\n", dbName)
-        if !getUserConfirmation("\n确认以上配置并继续？", true) {
-            fmt.Println("操作已取消")
-            return
-        }
-    }
+	if interactive {
+		fmt.Println("=== 数据库结构初始化 ===")
+		mongoURI = getUserInput("MongoDB连接URI", mongoURI)
+		dbName = getUserInput("数据库名称", dbName)
+		fmt.Println("\n=== 初始化配置 ===")
+		fmt.Printf("MongoDB URI: %s\n", mongoURI)
+		fmt.Printf("数据库名称: %s\n", dbName)
+		if !getUserConfirmation("\n确认以上配置并继续？", true) {
+			fmt.Println("操作已取消")
+			return
+		}
+	}
 
-    database.SetConfig(&config.Config{MongoURI: mongoURI, DatabaseName: dbName})
-    if err := database.Connect(); err != nil {
-        log.Fatalf("连接数据库失败: %v", err)
-    }
-    defer database.Close()
+	database.SetConfig(&config.Config{MongoURI: mongoURI, DatabaseName: dbName})
+	if err := database.Connect(); err != nil {
+		log.Fatalf("连接数据库失败: %v", err)
+	}
+	defer database.Close()
 
-    ctx := context.Background()
+	ctx := context.Background()
 
-    collections := []string{"scenes", "styleImages", "images", "detections"}
-    for _, coll := range collections {
-        if err := database.GetDatabase().CreateCollection(ctx, coll); err != nil {
-            log.Printf("创建集合 %s 提示: %v", coll, err)
-        } else {
-            log.Printf("已创建集合: %s", coll)
-        }
-    }
+	collections := []string{"scenes", "styleImages", "images", "detections"}
+	for _, coll := range collections {
+		if err := database.GetDatabase().CreateCollection(ctx, coll); err != nil {
+			log.Printf("创建集合 %s 提示: %v", coll, err)
+		} else {
+			log.Printf("已创建集合: %s", coll)
+		}
+	}
 
-    if err := models.EnsureDetectionIndexes(); err != nil {
-        log.Fatalf("创建 Detection 索引失败: %v", err)
-    }
-    if err := ensureImageIndexes(); err != nil {
-        log.Fatalf("创建 Images 索引失败: %v", err)
-    }
-    if err := ensureSceneIndexes(); err != nil {
-        log.Fatalf("创建 Scenes 索引失败: %v", err)
-    }
-    if err := ensureStyleImageIndexes(); err != nil {
-        log.Fatalf("创建 StyleImages 索引失败: %v", err)
-    }
+	if err := models.EnsureDetectionIndexes(); err != nil {
+		log.Fatalf("创建 Detection 索引失败: %v", err)
+	}
+	if err := ensureImageIndexes(); err != nil {
+		log.Fatalf("创建 Images 索引失败: %v", err)
+	}
+	if err := ensureSceneIndexes(); err != nil {
+		log.Fatalf("创建 Scenes 索引失败: %v", err)
+	}
+	if err := ensureStyleImageIndexes(); err != nil {
+		log.Fatalf("创建 StyleImages 索引失败: %v", err)
+	}
 
-    fmt.Println("仅结构初始化完成")
+	fmt.Println("仅结构初始化完成")
 }

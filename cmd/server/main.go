@@ -1,26 +1,25 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "net/http"
-    "os"
-    "os/signal"
-    "path/filepath"
-    "syscall"
-    "time"
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"syscall"
+	"time"
 
-    "foreignscan/internal/config"
-    "foreignscan/internal/database"
-    "foreignscan/internal/handlers"
-    "foreignscan/internal/middleware"
-    
+	"foreignscan/internal/config"
+	"foreignscan/internal/database"
+	"foreignscan/internal/handlers"
+	"foreignscan/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	
+
 	_ "foreignscan/docs" // 导入生成的docs包
 )
 
@@ -39,26 +38,26 @@ func main() {
 		os.Mkdir("uploads", 0755)
 	}
 
-    // 静态文件服务 - 使用相对路径，适合交付到客户环境
-    // 直接使用项目根目录下的uploads文件夹
-    uploadsPath := "./uploads"
-    // 确保 labels 目录存在（用于存放处理后的图片与标签）
-    if err := os.MkdirAll(filepath.Join(uploadsPath, "labels"), 0755); err != nil {
-        log.Printf("创建 uploads/labels 目录失败: %v", err)
-    }
-    r.Static("/uploads", uploadsPath)
-    r.Static("/public", "./public")
-	
-    // 添加调试日志
-    fmt.Printf("上传目录路径: %s\n", uploadsPath)
+	// 静态文件服务 - 使用相对路径，适合交付到客户环境
+	// 直接使用项目根目录下的uploads文件夹
+	uploadsPath := "./uploads"
+	// 确保 labels 目录存在（用于存放处理后的图片与标签）
+	if err := os.MkdirAll(filepath.Join(uploadsPath, "labels"), 0755); err != nil {
+		log.Printf("创建 uploads/labels 目录失败: %v", err)
+	}
+	r.Static("/uploads", uploadsPath)
+	r.Static("/public", "./public")
 
-    // 初始化数据库连接
-    if err := database.Connect(); err != nil {
-        log.Fatalf("数据库连接失败: %v", err)
-    }
-    defer database.Close()
+	// 添加调试日志
+	fmt.Printf("上传目录路径: %s\n", uploadsPath)
 
-    // 已移除 issues/comparisons 索引初始化（未使用）
+	// 初始化数据库连接
+	if err := database.Connect(); err != nil {
+		log.Fatalf("数据库连接失败: %v", err)
+	}
+	defer database.Close()
+
+	// 已移除 issues/comparisons 索引初始化（未使用）
 
 	// 注册路由
 	setupRoutes(r)
@@ -113,7 +112,7 @@ func main() {
 func setupRoutes(r *gin.Engine) {
 	// Swagger文档路由
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
+
 	// 健康检查路由
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -123,27 +122,27 @@ func setupRoutes(r *gin.Engine) {
 	})
 
 	// API路由组
-    api := r.Group("/api")
-    {
+	api := r.Group("/api")
+	{
 		// 获取图片列表
 		api.GET("/images", handlers.GetImages)
-		
+
 		// 获取单个图片详细信息
 		api.GET("/images/:id", handlers.GetImageDetail)
-		
+
 		// 根据日期获取图片
 		api.GET("/images/by-date", handlers.GetImagesByDate)
-		
+
 		// 根据日期和场景ID获取图片
 		api.GET("/images/by-date-scene", handlers.GetImagesByDateAndScene)
 
 		// 新增：根据状态或状态+时间范围筛选图片
 		api.GET("/images/filter", handlers.GetImagesByStatusTime)
-		
+
 		// 上传图片
 		api.POST("/upload", handlers.UploadImage)
 		api.POST("/upload-image", handlers.UploadImage) // 兼容客户端的路由
-		
+
 		// 场景相关API - 使用迁移后的Gin处理器
 		api.GET("/scenes", handlers.GetScenes)
 		api.GET("/scenes/:id", handlers.GetScene)
@@ -153,10 +152,10 @@ func setupRoutes(r *gin.Engine) {
 		// 获取特定场景下的图片列表
 		api.GET("/scenes/:id/images", handlers.GetSceneImages)
 		// 获取特定场景下的第一张图片
-		api.GET("/scenes/:id/first-image", handlers.GetSceneFirstImage)	
+		api.GET("/scenes/:id/first-image", handlers.GetSceneFirstImage)
 		// 获取所有场景的第一张图片
 		api.GET("/scenes/all/first-images", handlers.GetAllScenesFirstImage)
-		
+
 		// 样式图片相关API - 使用迁移后的Gin处理器
 		api.GET("/style-images", handlers.GetStyleImages)
 		api.GET("/style-images/scene/:sceneId", handlers.GetStyleImagesByScene)
@@ -164,22 +163,22 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/style-images", handlers.UploadStyleImage)
 		api.PUT("/style-images/:id", handlers.UpdateStyleImage)
 		api.DELETE("/style-images/:id", handlers.DeleteStyleImage)
-        // 检测结果相关API
-        api.GET("/images/:id/detections", handlers.GetImageDetections)
-        api.POST("/images/:id/detections", handlers.CreateImageDetection)
-        api.GET("/detections", handlers.QueryDetections)
+		// 检测结果相关API
+		api.GET("/images/:id/detections", handlers.GetImageDetections)
+		api.POST("/images/:id/detections", handlers.CreateImageDetection)
+		api.GET("/detections", handlers.QueryDetections)
 
-        // 新增：前端一键触发YOLO批量推理 & 任务查询
-        api.POST("/scenes/:id/detect", handlers.StartSceneDetect)
-        // 新增：前端一键触发单图推理
-        api.POST("/images/:id/detect", handlers.StartImageDetect)
-        // 兼容前端直接调用 /api/detect，传 imageId
-        api.POST("/detect", handlers.DetectEntry)
-    // 任务管理：取消与实时进度
-    api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
-    api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)
-        api.GET("/detect/jobs/:id", handlers.GetDetectJob)
+		// 新增：前端一键触发YOLO批量推理 & 任务查询
+		api.POST("/scenes/:id/detect", handlers.StartSceneDetect)
+		// 新增：前端一键触发单图推理
+		api.POST("/images/:id/detect", handlers.StartImageDetect)
+		// 兼容前端直接调用 /api/detect，传 imageId
+		api.POST("/detect", handlers.DetectEntry)
+		// 任务管理：取消与实时进度
+		api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
+		api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)
+		api.GET("/detect/jobs/:id", handlers.GetDetectJob)
 
-        // 已移除问题与对比相关API（未使用）
-    }
+		// 已移除问题与对比相关API（未使用）
+	}
 }

@@ -1,13 +1,13 @@
 package handlers
 
 import (
-    "net/http"
-    "time"
+	"net/http"
+	"time"
 
-    "foreignscan/internal/models"
+	"foreignscan/internal/models"
 
-    "github.com/gin-gonic/gin"
-    "go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetImages godoc
@@ -224,12 +224,12 @@ func GetSceneFirstImage(c *gin.Context) {
 		return
 	}
 
-    // 查找该场景下的最新一张图片（按createdAt降序）
-    image, err := models.FindFirstBySceneID(sceneID)
+	// 查找该场景下的最新一张图片（按createdAt降序）
+	image, err := models.FindFirstBySceneID(sceneID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-        "message": "获取场景最新图片失败: " + err.Error(),
+			"message": "获取场景最新图片失败: " + err.Error(),
 		})
 		return
 	}
@@ -238,7 +238,7 @@ func GetSceneFirstImage(c *gin.Context) {
 	if image == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-        "message": "该场景下没有图片",
+			"message": "该场景下没有图片",
 		})
 		return
 	}
@@ -259,8 +259,8 @@ func GetSceneFirstImage(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /scenes/all/first-images [get]
 func GetAllScenesFirstImage(c *gin.Context) {
-    // 获取所有场景
-    scenes, err := models.FindAllScenes()
+	// 获取所有场景
+	scenes, err := models.FindAllScenes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -278,18 +278,18 @@ func GetAllScenesFirstImage(c *gin.Context) {
 
 	result := make([]SceneWithFirstImage, 0, len(scenes))
 
-    // 遍历所有场景，获取每个场景的最新一张图片（按createdAt降序）
-    for _, scene := range scenes {
-        // 查找该场景下的最新一张图片（按createdAt降序）
-        image, _ := models.FindFirstBySceneID(scene.ID)
+	// 遍历所有场景，获取每个场景的最新一张图片（按createdAt降序）
+	for _, scene := range scenes {
+		// 查找该场景下的最新一张图片（按createdAt降序）
+		image, _ := models.FindFirstBySceneID(scene.ID)
 
-        // 添加到结果中（即使没有图片）
-        result = append(result, SceneWithFirstImage{
-            SceneID:    scene.ID,
-            SceneName:  scene.Name,
-            FirstImage: image,
-        })
-    }
+		// 添加到结果中（即使没有图片）
+		result = append(result, SceneWithFirstImage{
+			SceneID:    scene.ID,
+			SceneName:  scene.Name,
+			FirstImage: image,
+		})
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -343,89 +343,95 @@ func GetImageDetail(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /images/filter [get]
 func GetImagesByStatusTime(c *gin.Context) {
-    // 1) 读取参数
-    status := c.Query("status")
-    sceneIDStr := c.Query("sceneId")
-    startStr := c.Query("start")
-    endStr := c.Query("end")
-    hasIssueStr := c.Query("hasIssue")
+	// 1) 读取参数
+	status := c.Query("status")
+	sceneIDStr := c.Query("sceneId")
+	startStr := c.Query("start")
+	endStr := c.Query("end")
+	hasIssueStr := c.Query("hasIssue")
+	includeDetailsStr := c.Query("includeDetails")
 
-    // 2) 构建筛选输入
-    input := models.FindImagesByFilterInput{
-        Status: status,
-    }
+	// 2) 构建筛选输入
+	input := models.FindImagesByFilterInput{
+		Status: status,
+	}
 
-    // 解析 hasIssue
-    if hasIssueStr != "" {
-        val := false
-        if hasIssueStr == "true" || hasIssueStr == "1" {
-            val = true
-        }
-        input.HasIssue = &val
-    }
+	// 解析 includeDetails
+	if includeDetailsStr == "true" || includeDetailsStr == "1" {
+		input.IncludeDetails = true
+	}
 
-    // 解析 SceneID
-    if sceneIDStr != "" {
-        sid, err := primitive.ObjectIDFromHex(sceneIDStr)
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的sceneId"})
-            return
-        }
-        input.SceneID = sid
-    }
+	// 解析 hasIssue
+	if hasIssueStr != "" {
+		val := false
+		if hasIssueStr == "true" || hasIssueStr == "1" {
+			val = true
+		}
+		input.HasIssue = &val
+	}
 
-    // 解析时间函数
-    parseTime := func(s string, isStart bool) (time.Time, error) {
-        if len(s) == 10 { // YYYY-MM-DD
-            d, err := time.Parse("2006-01-02", s)
-            if err != nil {
-                return time.Time{}, err
-            }
-            if isStart {
-                return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location()), nil
-            }
-            return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, int(time.Second-time.Nanosecond), d.Location()), nil
-        }
-        // 尝试RFC3339
-        return time.Parse(time.RFC3339, s)
-    }
+	// 解析 SceneID
+	if sceneIDStr != "" {
+		sid, err := primitive.ObjectIDFromHex(sceneIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的sceneId"})
+			return
+		}
+		input.SceneID = sid
+	}
 
-    // 解析时间范围
-    if startStr != "" {
-        t, err := parseTime(startStr, true)
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "start时间格式错误"})
-            return
-        }
-        input.StartDate = t
-    }
-    if endStr != "" {
-        t, err := parseTime(endStr, false)
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "end时间格式错误"})
-            return
-        }
-        input.EndDate = t
-    }
+	// 解析时间函数
+	parseTime := func(s string, isStart bool) (time.Time, error) {
+		if len(s) == 10 { // YYYY-MM-DD
+			d, err := time.Parse("2006-01-02", s)
+			if err != nil {
+				return time.Time{}, err
+			}
+			if isStart {
+				return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location()), nil
+			}
+			return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, int(time.Second-time.Nanosecond), d.Location()), nil
+		}
+		// 尝试RFC3339
+		return time.Parse(time.RFC3339, s)
+	}
 
-    // 3) 执行查询
-    images, err := models.FindImagesByFilter(input)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
-        return
-    }
+	// 解析时间范围
+	if startStr != "" {
+		t, err := parseTime(startStr, true)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "start时间格式错误"})
+			return
+		}
+		input.StartDate = t
+	}
+	if endStr != "" {
+		t, err := parseTime(endStr, false)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "end时间格式错误"})
+			return
+		}
+		input.EndDate = t
+	}
 
-    // 4) 返回结果
-    c.JSON(http.StatusOK, gin.H{
-        "success": true,
-        "filters": gin.H{
-            "status": status, 
-            "sceneId": sceneIDStr,
-            "start": startStr, 
-            "end": endStr, 
-            "hasIssue": hasIssueStr,
-        },
-        "count":   len(images),
-        "images":  images,
-    })
+	// 3) 执行查询
+	images, err := models.FindImagesByFilter(input)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
+		return
+	}
+
+	// 4) 返回结果
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"filters": gin.H{
+			"status":   status,
+			"sceneId":  sceneIDStr,
+			"start":    startStr,
+			"end":      endStr,
+			"hasIssue": hasIssueStr,
+		},
+		"count":  len(images),
+		"images": images,
+	})
 }

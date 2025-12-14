@@ -39,7 +39,7 @@ func UploadImage(c *gin.Context) {
 	// 获取请求中的元数据
 	sceneIDStr := c.PostForm("sceneId")
 	var sceneID primitive.ObjectID
-	
+
 	// 如果提供了场景ID，尝试转换为ObjectID
 	if sceneIDStr != "" {
 		var err error
@@ -52,7 +52,7 @@ func UploadImage(c *gin.Context) {
 		// 如果没有提供场景ID，创建一个新的ObjectID
 		sceneID = primitive.NewObjectID()
 	}
-	
+
 	location := c.PostForm("location")
 
 	// 生成文件名
@@ -75,7 +75,7 @@ func UploadImage(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	// 保存文件到图片目录
 	dst := filepath.Join(imagesDir, filename)
 	if err := c.SaveUploadedFile(file, dst); err != nil {
@@ -110,7 +110,7 @@ func UploadImage(c *gin.Context) {
 		HasIssue:         false,
 		IssueType:        "",
 		Status:           models.ImageStatusUndetected, // 新上传图片默认状态为“未检测”
-		DetectionResults: []interface{}{},
+		DetectionResults: []models.DetectionItem{},
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}
@@ -126,7 +126,7 @@ func UploadImage(c *gin.Context) {
 
 	// 构建正确的访问路径
 	accessPath := fmt.Sprintf("/uploads/images/%s/%s", sceneID.Hex(), filename)
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,
 		"file":           filename,

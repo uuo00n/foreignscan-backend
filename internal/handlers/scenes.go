@@ -63,11 +63,31 @@ func GetScene(c *gin.Context) {
 		return
 	}
 
+	// 查找该场景下的最新图片及状态
+	var latestImage *models.Image
+	sceneObjID, err := primitive.ObjectIDFromHex(id)
+	if err == nil {
+		latestImage, _ = models.FindLatestImageBySceneID(sceneObjID)
+	}
+
 	// 返回JSON响应
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"success": true,
 		"scene":   scene,
-	})
+	}
+
+	if latestImage != nil {
+		response["latestImage"] = latestImage
+		// 方便前端直接判断的辅助字段
+		response["latestStatus"] = latestImage.Status // 未检测/已检测
+		response["hasIssue"] = latestImage.HasIssue   // 是否有缺陷
+	} else {
+		response["latestImage"] = nil
+		response["latestStatus"] = "none"
+		response["hasIssue"] = false
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // CreateScene godoc

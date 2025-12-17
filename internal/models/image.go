@@ -494,3 +494,66 @@ func (i *Image) Update() error {
 	_, err := collection.UpdateOne(ctx, filter, update)
 	return err
 }
+
+// FindLatestImageBySceneID 查找场景下的最新图片（包含检测详情）
+func FindLatestImageBySceneID(sceneID primitive.ObjectID) (*Image, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := database.GetCollection("images")
+
+	pipeline := mongo.Pipeline{}
+
+	// Match sceneId
+	pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{"sceneId": sceneID}}})
+
+	// Sort by createdAt desc
+	pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "createdAt", Value: -1}}}})
+
+	// Limit to 1
+	pipeline = append(pipeline, bson.D{{Key: "$limit", Value: 1}})
+
+	// Lookup detections
+	pipeline = append(pipeline, bson.D{{Key: "$lookup", Value: bson.M{
+		"from": "detections",
+		"let":  bson.M{"imgId": "$_id"},
+		"pipeline": []bson.M{
+			{"$match": bson.M{"$expr": bson.M{"$eq": []interface{}{"$imageId", "$$imgId"}}}},
+			{"$sort": bson.M{"createdAt": -1}},
+			{"$limit": 1},
+		},
+		"as": "latest_detection",
+	}}})
+
+	// AddFields
+	pipeline = append(pipeline, bson.D{{Key: "$addFields", Value: bson.M{
+		"detectionResults": bson.M{
+			"$ifNull": []interface{}{
+				bson.M{"$arrayElemAt": []interface{}{"$latest_detection.items", 0}},
+				[]interface{}{},
+			},
+		},
+	}}})
+
+	// Project
+	pipeline = append(pipeline, bson.D{{Key: "$project", Value: bson.M{
+		"latest_detection": 0,
+	}}})
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var images []Image
+	if err := cursor.All(ctx, &images); err != nil {
+		return nil, err
+	}
+
+	if len(images) == 0 {
+		return nil, nil
+	}
+
+	return &images[0], nil
+}

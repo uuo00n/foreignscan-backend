@@ -161,7 +161,7 @@ func UploadStyleImage(c *gin.Context) {
 	ext := filepath.Ext(header.Filename)
 	filename := "style_" + time.Now().Format("20060102150405") + ext
 	filePath := filepath.Join(styleDir, filename)
-	
+
 	// 保存文件
 	if err := c.SaveUploadedFile(header, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

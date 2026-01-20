@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -300,18 +301,33 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 				}
 
 				sourcePath := filepath.Join("uploads", "images", sceneHex, im.Filename)
-
+				imagePath := utils.NormalizeUploadsLocalPath(sourcePath)
+				imagePath = strings.ReplaceAll(imagePath, "\\", "/")
 				reqBody := map[string]interface{}{
-					"image_path": utils.NormalizeUploadsLocalPath(sourcePath),
-					"model_path": cfg.Weights,
+					"image_path": imagePath,
 					"conf":       cfg.Conf,
 					"iou":        cfg.IoU,
+				}
+				if strings.TrimSpace(cfg.Weights) != "" {
+					reqBody["model_path"] = cfg.Weights
 				}
 				b, _ := json.Marshal(reqBody)
 				start := time.Now()
 				resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/detect", "application/json", bytes.NewReader(b))
 				if err != nil {
 					job.Message = fmt.Sprintf("服务调用失败 %s: %v", e.Name(), err)
+					GetJobManager().SetJob(job)
+					continue
+				}
+				body, readErr := io.ReadAll(resp.Body)
+				_ = resp.Body.Close()
+				if readErr != nil {
+					job.Message = fmt.Sprintf("读取服务响应失败 %s: %v", e.Name(), readErr)
+					GetJobManager().SetJob(job)
+					continue
+				}
+				if resp.StatusCode >= 400 {
+					job.Message = fmt.Sprintf("服务返回错误 %s: %s", e.Name(), shortOut(string(body)))
 					GetJobManager().SetJob(job)
 					continue
 				}
@@ -336,10 +352,13 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 					} `json:"summary"`
 					LabeledPath string `json:"labeledPath"`
 				}
-				_ = json.NewDecoder(resp.Body).Decode(&dr)
-				_ = resp.Body.Close()
+				if err := json.NewDecoder(bytes.NewReader(body)).Decode(&dr); err != nil {
+					job.Message = fmt.Sprintf("解析服务响应失败 %s: %v", e.Name(), err)
+					GetJobManager().SetJob(job)
+					continue
+				}
 				if !dr.Success {
-					job.Message = "服务返回失败"
+					job.Message = fmt.Sprintf("服务返回失败 %s: %s", e.Name(), shortOut(string(body)))
 					GetJobManager().SetJob(job)
 					continue
 				}
@@ -730,11 +749,15 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 			job.Message = "正在调用服务推理(单图)"
 			GetJobManager().SetJob(job)
 
+			imagePath := utils.NormalizeUploadsLocalPath(sourcePath)
+			imagePath = strings.ReplaceAll(imagePath, "\\", "/")
 			reqBody := map[string]interface{}{
-				"image_path": utils.NormalizeUploadsLocalPath(sourcePath),
-				"model_path": cfg.Weights,
+				"image_path": imagePath,
 				"conf":       cfg.Conf,
 				"iou":        cfg.IoU,
+			}
+			if strings.TrimSpace(cfg.Weights) != "" {
+				reqBody["model_path"] = cfg.Weights
 			}
 			b, _ := json.Marshal(reqBody)
 			start := time.Now()
@@ -748,6 +771,27 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 				GetJobManager().ReleaseScene(im.SceneID, jobID)
 				return
 			}
+			body, readErr := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			if readErr != nil {
+				job.Status = "failed"
+				job.Error = fmt.Sprintf("读取服务响应失败: %v", readErr)
+				t := time.Now()
+				job.EndedAt = &t
+				GetJobManager().SetJob(job)
+				GetJobManager().ReleaseScene(im.SceneID, jobID)
+				return
+			}
+			if resp.StatusCode >= 400 {
+				job.Status = "failed"
+				job.Error = fmt.Sprintf("服务返回错误: %s", shortOut(string(body)))
+				t := time.Now()
+				job.EndedAt = &t
+				GetJobManager().SetJob(job)
+				GetJobManager().ReleaseScene(im.SceneID, jobID)
+				return
+			}
+
 			var dr struct {
 				Success bool `json:"success"`
 				Items   []struct {
@@ -769,11 +813,18 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 				} `json:"summary"`
 				LabeledPath string `json:"labeledPath"`
 			}
-			_ = json.NewDecoder(resp.Body).Decode(&dr)
-			_ = resp.Body.Close()
+			if err := json.NewDecoder(bytes.NewReader(body)).Decode(&dr); err != nil {
+				job.Status = "failed"
+				job.Error = fmt.Sprintf("解析服务响应失败: %v", err)
+				t := time.Now()
+				job.EndedAt = &t
+				GetJobManager().SetJob(job)
+				GetJobManager().ReleaseScene(im.SceneID, jobID)
+				return
+			}
 			if !dr.Success {
 				job.Status = "failed"
-				job.Error = "服务返回失败"
+				job.Error = fmt.Sprintf("服务返回失败: %s", shortOut(string(body)))
 				t := time.Now()
 				job.EndedAt = &t
 				GetJobManager().SetJob(job)

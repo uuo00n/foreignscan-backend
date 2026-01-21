@@ -1,145 +1,86 @@
 package models
 
 import (
-	"context"
 	"time"
 
 	"foreignscan/internal/database"
+	"foreignscan/pkg/utils"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"gorm.io/gorm"
 )
 
 // StyleImage 样式图模型
 type StyleImage struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	SceneID     primitive.ObjectID `bson:"sceneId" json:"sceneId"`         // 关联的场景ID
-	Name        string             `bson:"name" json:"name"`               // 样式图名称
-	Description string             `bson:"description" json:"description"` // 样式图描述
-	Filename    string             `bson:"filename" json:"filename"`       // 文件名
-	Path        string             `bson:"path" json:"path"`               // 文件路径
-	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`     // 创建时间
-	UpdatedAt   time.Time          `bson:"updatedAt" json:"updatedAt"`     // 更新时间
+	ID          string    `gorm:"primaryKey;type:varchar(24)" json:"id"`
+	SceneID     string    `gorm:"index;type:varchar(24)" json:"sceneId"` // 关联的场景ID
+	Name        string    `gorm:"type:varchar(255)" json:"name"`         // 样式图名称
+	Description string    `gorm:"type:text" json:"description"`          // 样式图描述
+	Filename    string    `gorm:"type:varchar(255)" json:"filename"`     // 文件名
+	Path        string    `gorm:"type:text" json:"path"`                 // 文件路径
+	CreatedAt   time.Time `json:"createdAt"`                             // 创建时间
+	UpdatedAt   time.Time `json:"updatedAt"`                             // 更新时间
+}
+
+// BeforeCreate GORM hook
+func (s *StyleImage) BeforeCreate(tx *gorm.DB) (err error) {
+	if s.ID == "" {
+		s.ID = utils.GenerateObjectID()
+	}
+	if s.CreatedAt.IsZero() {
+		s.CreatedAt = time.Now()
+	}
+	s.UpdatedAt = time.Now()
+	return
 }
 
 // FindAllStyleImages 获取所有样式图
 func FindAllStyleImages() ([]StyleImage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
-	// 查询所有样式图，按创建时间降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, bson.D{}, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
+	db := database.GetDB()
 	var styleImages []StyleImage
-	if err := cursor.All(ctx, &styleImages); err != nil {
-		return nil, err
+	err := db.Order("created_at DESC").Find(&styleImages).Error
+	if styleImages == nil {
+		styleImages = []StyleImage{}
 	}
-
-	return styleImages, nil
+	return styleImages, err
 }
 
 // FindStyleImagesBySceneID 根据场景ID查找样式图
 func FindStyleImagesBySceneID(sceneID string) ([]StyleImage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
-	objID, err := primitive.ObjectIDFromHex(sceneID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 查询指定场景的所有样式图
-	filter := bson.M{"sceneId": objID}
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
+	db := database.GetDB()
 	var styleImages []StyleImage
-	if err := cursor.All(ctx, &styleImages); err != nil {
-		return nil, err
+	err := db.Where("scene_id = ?", sceneID).Order("created_at DESC").Find(&styleImages).Error
+	if styleImages == nil {
+		styleImages = []StyleImage{}
 	}
-
-	return styleImages, nil
+	return styleImages, err
 }
 
 // FindStyleImageByID 根据ID查找样式图
 func FindStyleImageByID(id string) (*StyleImage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-
+	db := database.GetDB()
 	var styleImage StyleImage
-	err = collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&styleImage)
+	err := db.First(&styleImage, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
-
 	return &styleImage, nil
 }
 
 // Save 保存样式图
 func (s *StyleImage) Save() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
-	if s.ID.IsZero() {
-		s.ID = primitive.NewObjectID()
-		s.CreatedAt = time.Now()
-	}
-	s.UpdatedAt = time.Now()
-
-	_, err := collection.InsertOne(ctx, s)
-	return err
+	db := database.GetDB()
+	return db.Create(s).Error
 }
 
 // Update 更新样式图
 func (s *StyleImage) Update() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
+	db := database.GetDB()
 	s.UpdatedAt = time.Now()
-
-	filter := bson.M{"_id": s.ID}
-	update := bson.M{"$set": s}
-
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+	return db.Save(s).Error
 }
 
-// Delete 删除样式图
-func (s *StyleImage) Delete() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("styleImages")
-
-	filter := bson.M{"_id": s.ID}
-
-	_, err := collection.DeleteOne(ctx, filter)
-	return err
+// DeleteStyleImage 删除样式图
+func DeleteStyleImage(id string) error {
+	db := database.GetDB()
+	return db.Delete(&StyleImage{}, "id = ?", id).Error
 }

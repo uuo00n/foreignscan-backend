@@ -7,7 +7,6 @@ import (
 	"foreignscan/internal/models"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetScenes godoc
@@ -64,12 +63,12 @@ func GetScene(c *gin.Context) {
 	}
 
 	// 查找该场景下的最新图片及状态
-	var latestImage *models.Image
-	sceneObjID, err := primitive.ObjectIDFromHex(id)
-	if err == nil {
-		latestImage, _ = models.FindLatestImageBySceneID(sceneObjID)
+	latestImage, err := models.GetFirstImageBySceneID(id)
+	if err != nil {
+		// Ignore error, just nil
+		latestImage = nil
 	}
-
+	
 	// 返回JSON响应
 	response := gin.H{
 		"success": true,
@@ -112,6 +111,7 @@ func CreateScene(c *gin.Context) {
 		return
 	}
 
+	// ID在模型钩子中自动生成
 	// 设置创建时间和更新时间
 	scene.CreatedAt = time.Now()
 	scene.UpdatedAt = time.Now()
@@ -150,16 +150,6 @@ func UpdateScene(c *gin.Context) {
 	// 从URL获取场景ID
 	id := c.Param("id")
 
-	// 将ID转换为ObjectID
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "无效的场景ID",
-		})
-		return
-	}
-
 	// 解析请求体
 	var updatedScene models.Scene
 	if err := c.ShouldBindJSON(&updatedScene); err != nil {
@@ -181,7 +171,7 @@ func UpdateScene(c *gin.Context) {
 	}
 
 	// 更新场景字段
-	updatedScene.ID = objID
+	updatedScene.ID = existingScene.ID
 	updatedScene.CreatedAt = existingScene.CreatedAt
 	updatedScene.UpdatedAt = time.Now()
 
@@ -217,8 +207,8 @@ func DeleteScene(c *gin.Context) {
 	// 从URL获取场景ID
 	id := c.Param("id")
 
-	// 查找场景
-	scene, err := models.FindSceneByID(id)
+	// 查找场景（确认存在）
+	_, err := models.FindSceneByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
@@ -228,7 +218,7 @@ func DeleteScene(c *gin.Context) {
 	}
 
 	// 删除场景
-	err = scene.Delete()
+	err = models.DeleteScene(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

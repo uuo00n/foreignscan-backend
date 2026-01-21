@@ -11,7 +11,7 @@ import (
 	"foreignscan/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gorm.io/datatypes"
 )
 
 // UploadImage godoc
@@ -38,20 +38,10 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 获取请求中的元数据
-	sceneIDStr := c.PostForm("sceneId")
-	var sceneID primitive.ObjectID
-
-	// 如果提供了场景ID，尝试转换为ObjectID
-	if sceneIDStr != "" {
-		var err error
-		sceneID, err = primitive.ObjectIDFromHex(sceneIDStr)
-		if err != nil {
-			// 如果转换失败，创建一个新的ObjectID
-			sceneID = primitive.NewObjectID()
-		}
-	} else {
-		// 如果没有提供场景ID，创建一个新的ObjectID
-		sceneID = primitive.NewObjectID()
+	sceneID := c.PostForm("sceneId")
+	// 如果没有提供场景ID，创建一个新的ID
+	if sceneID == "" {
+		sceneID = utils.GenerateObjectID()
 	}
 
 	location := c.PostForm("location")
@@ -69,7 +59,7 @@ func UploadImage(c *gin.Context) {
 
 	// 创建图片专用目录
 	uploadsRoot := config.Get().UploadDir
-	imagesDir := filepath.Join(uploadsRoot, "images", sceneID.Hex())
+	imagesDir := filepath.Join(uploadsRoot, "images", sceneID)
 	if err := utils.EnsureDir(imagesDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -88,7 +78,7 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	dstWeb := filepath.ToSlash(filepath.Join("uploads", "images", sceneID.Hex(), filename))
+	dstWeb := filepath.ToSlash(filepath.Join("uploads", "images", sceneID, filename))
 
 	// 获取下一个序列号
 	sequenceNumber, err := models.GetNextSequence()
@@ -103,7 +93,7 @@ func UploadImage(c *gin.Context) {
 	// 创建新的图片记录
 	now := time.Now()
 	newImage := models.Image{
-		ID:               primitive.NewObjectID(),
+		ID:               utils.GenerateObjectID(),
 		SequenceNumber:   sequenceNumber,
 		SceneID:          sceneID,
 		Timestamp:        now,
@@ -114,7 +104,7 @@ func UploadImage(c *gin.Context) {
 		HasIssue:         false,
 		IssueType:        "",
 		Status:           models.ImageStatusUndetected, // 新上传图片默认状态为“未检测”
-		DetectionResults: []models.DetectionItem{},
+		DetectionResults: datatypes.JSONSlice[models.DetectionItem]{},
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	}
@@ -129,13 +119,13 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 构建正确的访问路径
-	accessPath := fmt.Sprintf("/uploads/images/%s/%s", sceneID.Hex(), filename)
+	accessPath := fmt.Sprintf("/uploads/images/%s/%s", sceneID, filename)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,
 		"file":           filename,
 		"path":           accessPath,
-		"imageId":        newImage.ID.Hex(),
+		"imageId":        newImage.ID,
 		"sequenceNumber": sequenceNumber,
 	})
 }

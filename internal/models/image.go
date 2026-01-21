@@ -5,29 +5,28 @@ import (
 	"time"
 
 	"foreignscan/internal/database"
+	"foreignscan/pkg/utils"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // Image 图片模型
 type Image struct {
-	ID               primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	SequenceNumber   int                `bson:"sequenceNumber" json:"sequenceNumber"`
-	SceneID          primitive.ObjectID `bson:"sceneId" json:"sceneId"` // 关联的场景ID
-	Timestamp        time.Time          `bson:"timestamp" json:"timestamp"`
-	Location         string             `bson:"location" json:"location"`
-	Filename         string             `bson:"filename" json:"filename"`
-	Path             string             `bson:"path" json:"path"`
-	IsDetected       bool               `bson:"isDetected" json:"isDetected"`
-	HasIssue         bool               `bson:"hasIssue" json:"hasIssue"`
-	IssueType        string             `bson:"issueType" json:"issueType"`
-	Status           string             `bson:"status" json:"status"` // 图片检测状态：未检测/已检测
-	DetectionResults []DetectionItem    `bson:"detectionResults" json:"detectionResults"`
-	CreatedAt        time.Time          `bson:"createdAt" json:"createdAt"` // 创建时间
-	UpdatedAt        time.Time          `bson:"updatedAt" json:"updatedAt"` // 更新时间
+	ID               string                             `gorm:"primaryKey;type:varchar(24)" json:"id"`
+	SequenceNumber   int                                `gorm:"index" json:"sequenceNumber"`
+	SceneID          string                             `gorm:"index;type:varchar(24)" json:"sceneId"` // 关联的场景ID
+	Timestamp        time.Time                          `json:"timestamp"`
+	Location         string                             `gorm:"type:varchar(255)" json:"location"`
+	Filename         string                             `gorm:"type:varchar(255)" json:"filename"`
+	Path             string                             `gorm:"type:text" json:"path"`
+	IsDetected       bool                               `json:"isDetected"`
+	HasIssue         bool                               `json:"hasIssue"`
+	IssueType        string                             `gorm:"type:varchar(50)" json:"issueType"`
+	Status           string                             `gorm:"type:varchar(50)" json:"status"` // 图片检测状态：未检测/已检测
+	DetectionResults datatypes.JSONSlice[DetectionItem] `gorm:"type:jsonb" json:"detectionResults"`
+	CreatedAt        time.Time                          `json:"createdAt"` // 创建时间
+	UpdatedAt        time.Time                          `json:"updatedAt"` // 更新时间
 }
 
 // 定义图片状态常量，避免魔法字符串
@@ -39,521 +38,269 @@ const (
 	ImageStatusDefective = "缺陷"
 )
 
-// GetNextSequence 获取下一个序列号
-func GetNextSequence() (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 查找最大序号
-	opts := options.FindOne().SetSort(bson.D{{Key: "sequenceNumber", Value: -1}})
-	var maxImage Image
-	err := collection.FindOne(ctx, bson.D{}, opts).Decode(&maxImage)
-
-	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
-			// 如果没有记录，从1开始
-			return 1, nil
-		}
-		return 0, err
+// BeforeCreate GORM hook to generate ID
+func (i *Image) BeforeCreate(tx *gorm.DB) (err error) {
+	if i.ID == "" {
+		i.ID = utils.GenerateObjectID()
 	}
-
-	// 返回最大序号+1
-	return maxImage.SequenceNumber + 1, nil
+	if i.CreatedAt.IsZero() {
+		i.CreatedAt = time.Now()
+	}
+	i.UpdatedAt = time.Now()
+	if i.DetectionResults == nil {
+		i.DetectionResults = datatypes.JSONSlice[DetectionItem]{}
+	}
+	return
 }
 
-// FindAll 获取所有图片
-func FindAll() ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 查询所有图片，按序号降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "sequenceNumber", Value: -1}})
-	cursor, err := collection.Find(ctx, bson.D{}, opts)
-	if err != nil {
-		return nil, err
+// AfterFind GORM hook to ensure slices are not nil
+func (i *Image) AfterFind(tx *gorm.DB) (err error) {
+	if i.DetectionResults == nil {
+		i.DetectionResults = datatypes.JSONSlice[DetectionItem]{}
 	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-
-	return images, nil
-}
-
-// FindByID 根据ID查找图片
-func FindByID(id string) (*Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
-
-	var image Image
-	err = collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&image)
-	if err != nil {
-		return nil, err
-	}
-
-	return &image, nil
-}
-
-// FindBySceneID 根据场景ID查找图片
-func FindBySceneID(sceneID primitive.ObjectID) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 查询指定场景下的所有图片，按序列号升序排列
-	opts := options.Find().SetSort(bson.D{{Key: "sequenceNumber", Value: 1}})
-	cursor, err := collection.Find(ctx, bson.M{"sceneId": sceneID}, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-
-	return images, nil
-}
-
-// FindFirstBySceneID 根据场景ID查找最新一张图片（按时间）
-// 说明：为了避免sequenceNumber异常导致排序不准确，这里改为按createdAt降序取第一条
-func FindFirstBySceneID(sceneID primitive.ObjectID) (*Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 查询指定场景下的最新一张图片（按createdAt降序排列）
-	opts := options.FindOne().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	var image Image
-	err := collection.FindOne(ctx, bson.M{"sceneId": sceneID}, opts).Decode(&image)
-
-	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
-			// 没有找到图片，返回nil而不是错误
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &image, nil
-}
-
-// FindByDate 根据日期查找图片
-func FindByDate(date time.Time) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 计算日期范围（当天00:00:00到23:59:59）
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	endOfDay := startOfDay.Add(24 * time.Hour).Add(-time.Nanosecond)
-
-	// 查询在指定日期范围内创建的图片
-	filter := bson.M{
-		"createdAt": bson.M{
-			"$gte": startOfDay,
-			"$lte": endOfDay,
-		},
-	}
-
-	// 按创建时间降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-
-	return images, nil
-}
-
-// FindByDateAndSceneID 根据日期和场景ID查找图片
-func FindByDateAndSceneID(date time.Time, sceneID primitive.ObjectID) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 计算日期范围（当天00:00:00到23:59:59）
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
-	endOfDay := startOfDay.Add(24 * time.Hour).Add(-time.Nanosecond)
-
-	// 查询在指定日期范围内且属于指定场景的图片
-	filter := bson.M{
-		"createdAt": bson.M{
-			"$gte": startOfDay,
-			"$lte": endOfDay,
-		},
-		"sceneId": sceneID,
-	}
-
-	// 按创建时间降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	// 解析结果
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-
-	return images, nil
-}
-
-// FindByStatus 根据状态筛选图片
-// 参数：
-// - status: 图片状态（合格/缺陷/未检测）
-// 返回：满足条件的图片列表，按创建时间降序
-func FindByStatus(status string) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	// 按创建时间降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, bson.M{"status": status}, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-	return images, nil
-}
-
-// FindByStatusAndTimeRange 根据状态与时间范围筛选图片
-// 参数：
-// - status: 图片状态（合格/缺陷/未检测）
-// - start: 起始时间（包含）
-// - end: 结束时间（包含）
-// 返回：满足条件的图片列表，按创建时间降序
-func FindByStatusAndTimeRange(status string, start, end time.Time) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	filter := bson.M{
-		"status": status,
-		"createdAt": bson.M{
-			"$gte": start,
-			"$lte": end,
-		},
-	}
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-	return images, nil
-}
-
-// FindByFlags 根据 isDetected 与可选的 hasIssue 筛选图片
-// hasIssueParamProvided 为 true 时按 hasIssue 精确筛选；否则仅按 isDetected
-func FindByFlags(isDetected bool, hasIssueParamProvided bool, hasIssue bool) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	filter := bson.M{
-		"isDetected": isDetected,
-	}
-	if hasIssueParamProvided {
-		filter["hasIssue"] = hasIssue
-	}
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-	return images, nil
-}
-
-// FindByFlagsAndTimeRange 根据 isDetected 与可选 hasIssue 及时间范围筛选图片
-func FindByFlagsAndTimeRange(isDetected bool, hasIssueParamProvided bool, hasIssue bool, start, end time.Time) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	filter := bson.M{
-		"isDetected": isDetected,
-		"createdAt": bson.M{
-			"$gte": start,
-			"$lte": end,
-		},
-	}
-	if hasIssueParamProvided {
-		filter["hasIssue"] = hasIssue
-	}
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-	return images, nil
-}
-
-// FindImagesByFilterInput 筛选参数结构体
-type FindImagesByFilterInput struct {
-	Status         string             // "已检测"/"未检测"，为空则不筛选状态
-	HasIssue       *bool              // true/false，为nil则不筛选
-	SceneID        primitive.ObjectID // Zero ObjectID则不筛选
-	StartDate      time.Time          // Zero time则不筛选
-	EndDate        time.Time          // Zero time则不筛选
-	IncludeDetails bool               // 是否包含检测详情（关联查询detections）
-}
-
-// FindImagesByFilter 通用筛选函数
-func FindImagesByFilter(input FindImagesByFilterInput) ([]Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-	filter := bson.M{}
-
-	// 1. 状态筛选 (兼容 status 字段和 isDetected 字段)
-	if input.Status != "" {
-		if input.Status == ImageStatusUndetected {
-			filter["isDetected"] = false
-		} else if input.Status == ImageStatusDetected {
-			filter["isDetected"] = true
-		} else {
-			// 如果是其他状态字符串，尝试匹配 status 字段
-			filter["status"] = input.Status
-		}
-	}
-
-	// 2. 是否有问题筛选
-	if input.HasIssue != nil {
-		filter["hasIssue"] = *input.HasIssue
-	}
-
-	// 3. 场景筛选
-	if !input.SceneID.IsZero() {
-		filter["sceneId"] = input.SceneID
-	}
-
-	// 4. 时间范围筛选
-	if !input.StartDate.IsZero() || !input.EndDate.IsZero() {
-		dateFilter := bson.M{}
-		if !input.StartDate.IsZero() {
-			dateFilter["$gte"] = input.StartDate
-		}
-		if !input.EndDate.IsZero() {
-			dateFilter["$lte"] = input.EndDate
-		}
-		filter["createdAt"] = dateFilter
-	}
-
-	// 如果需要详情，使用聚合查询
-	if input.IncludeDetails {
-		pipeline := mongo.Pipeline{}
-
-		// Match
-		pipeline = append(pipeline, bson.D{{Key: "$match", Value: filter}})
-
-		// Sort
-		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "createdAt", Value: -1}}}})
-
-		// Lookup detections
-		// 使用 pipeline lookup 来获取最新的一条检测记录
-		pipeline = append(pipeline, bson.D{{Key: "$lookup", Value: bson.M{
-			"from": "detections",
-			"let":  bson.M{"imgId": "$_id"},
-			"pipeline": []bson.M{
-				{"$match": bson.M{"$expr": bson.M{"$eq": []interface{}{"$imageId", "$$imgId"}}}},
-				{"$sort": bson.M{"createdAt": -1}},
-				{"$limit": 1},
-			},
-			"as": "latest_detection",
-		}}})
-
-		// AddFields: 将 latest_detection[0].items 赋值给 detectionResults
-		pipeline = append(pipeline, bson.D{{Key: "$addFields", Value: bson.M{
-			"detectionResults": bson.M{
-				"$ifNull": []interface{}{
-					bson.M{"$arrayElemAt": []interface{}{"$latest_detection.items", 0}},
-					[]interface{}{},
-				},
-			},
-		}}})
-
-		// Project: 去掉中间字段 latest_detection (可选，为了整洁)
-		pipeline = append(pipeline, bson.D{{Key: "$project", Value: bson.M{
-			"latest_detection": 0,
-		}}})
-
-		cursor, err := collection.Aggregate(ctx, pipeline)
-		if err != nil {
-			return nil, err
-		}
-		defer cursor.Close(ctx)
-
-		var images []Image
-		if err := cursor.All(ctx, &images); err != nil {
-			return nil, err
-		}
-		return images, nil
-	}
-
-	// 普通查询
-	// 按创建时间降序排列
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-
-	cursor, err := collection.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
-		return nil, err
-	}
-	return images, nil
+	return
 }
 
 // Save 保存图片
 func (i *Image) Save() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	db := database.GetDB()
+	return db.Save(i).Error
+}
 
-	collection := database.GetCollection("images")
-
-	if i.ID.IsZero() {
-		i.ID = primitive.NewObjectID()
+// GetNextSequence 获取下一个序列号
+func GetNextSequence() (int, error) {
+	db := database.GetDB()
+	var maxSeq int
+	// 使用Coalesce处理空表情况
+	err := db.Model(&Image{}).Select("COALESCE(MAX(sequence_number), 0)").Scan(&maxSeq).Error
+	if err != nil {
+		return 0, err
 	}
-
-	_, err := collection.InsertOne(ctx, i)
-	return err
+	return maxSeq + 1, nil
 }
 
-// Update 更新图片
-func (i *Image) Update() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	filter := bson.M{"_id": i.ID}
-	update := bson.M{"$set": i}
-
-	_, err := collection.UpdateOne(ctx, filter, update)
-	return err
+// FindAll 获取所有图片
+func FindAll() ([]Image, error) {
+	db := database.GetDB()
+	var images []Image
+	err := db.Order("sequence_number DESC").Find(&images).Error
+	if images == nil {
+		images = []Image{}
+	}
+	return images, err
 }
 
-// FindLatestImageBySceneID 查找场景下的最新图片（包含检测详情）
-func FindLatestImageBySceneID(sceneID primitive.ObjectID) (*Image, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	collection := database.GetCollection("images")
-
-	pipeline := mongo.Pipeline{}
-
-	// Match sceneId
-	pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.M{"sceneId": sceneID}}})
-
-	// Sort by createdAt desc
-	pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "createdAt", Value: -1}}}})
-
-	// Limit to 1
-	pipeline = append(pipeline, bson.D{{Key: "$limit", Value: 1}})
-
-	// Lookup detections
-	pipeline = append(pipeline, bson.D{{Key: "$lookup", Value: bson.M{
-		"from": "detections",
-		"let":  bson.M{"imgId": "$_id"},
-		"pipeline": []bson.M{
-			{"$match": bson.M{"$expr": bson.M{"$eq": []interface{}{"$imageId", "$$imgId"}}}},
-			{"$sort": bson.M{"createdAt": -1}},
-			{"$limit": 1},
-		},
-		"as": "latest_detection",
-	}}})
-
-	// AddFields
-	pipeline = append(pipeline, bson.D{{Key: "$addFields", Value: bson.M{
-		"detectionResults": bson.M{
-			"$ifNull": []interface{}{
-				bson.M{"$arrayElemAt": []interface{}{"$latest_detection.items", 0}},
-				[]interface{}{},
-			},
-		},
-	}}})
-
-	// Project
-	pipeline = append(pipeline, bson.D{{Key: "$project", Value: bson.M{
-		"latest_detection": 0,
-	}}})
-
-	cursor, err := collection.Aggregate(ctx, pipeline)
+// FindByID 根据ID查找图片
+func FindByID(id string) (*Image, error) {
+	db := database.GetDB()
+	var image Image
+	err := db.First(&image, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	return &image, nil
+}
+
+// FindBySceneID 根据场景ID查找图片
+func FindBySceneID(sceneID string) ([]Image, error) {
+	db := database.GetDB()
+	var images []Image
+	err := db.Where("scene_id = ?", sceneID).Order("sequence_number DESC").Find(&images).Error
+	if images == nil {
+		images = []Image{}
+	}
+	return images, err
+}
+
+// UpdateImageDetectionSummary 更新图片检测结果摘要
+func UpdateImageDetectionSummary(imageID string, hasIssue bool, issueType string, isDetected bool) error {
+	db := database.GetDB()
+
+	updates := map[string]interface{}{
+		"has_issue":  hasIssue,
+		"issue_type": issueType,
+		"updated_at": time.Now(),
+	}
+
+	if isDetected {
+		updates["is_detected"] = true
+		updates["status"] = ImageStatusDetected
+
+		// 同时更新 DetectionResults 为最新的一次检测记录
+		// 这里需要先查出来最新的 run
+		run, err := FindLatestDetectionByImageID(imageID)
+		if err == nil && run != nil {
+			updates["detection_results"] = run.Items
+		}
+	}
+
+	return db.Model(&Image{}).Where("id = ?", imageID).Updates(updates).Error
+}
+
+// FindImagesByDate 根据日期查找图片
+func FindImagesByDate(dateStr string) ([]Image, error) {
+	db := database.GetDB()
+
+	// 解析日期，假设格式为 YYYY-MM-DD
+	startTime, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return nil, err
+	}
+	endTime := startTime.Add(24 * time.Hour)
 
 	var images []Image
-	if err := cursor.All(ctx, &images); err != nil {
+	err = db.Where("created_at >= ? AND created_at < ?", startTime, endTime).
+		Order("sequence_number DESC").
+		Find(&images).Error
+
+	if images == nil {
+		images = []Image{}
+	}
+	return images, err
+}
+
+// FindImagesByDateAndScene 根据日期和场景查找图片
+func FindImagesByDateAndScene(dateStr string, sceneID string) ([]Image, error) {
+	db := database.GetDB()
+
+	query := db.Model(&Image{})
+
+	if dateStr != "" {
+		startTime, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return nil, err
+		}
+		endTime := startTime.Add(24 * time.Hour)
+		query = query.Where("created_at >= ? AND created_at < ?", startTime, endTime)
+	}
+
+	if sceneID != "" {
+		query = query.Where("scene_id = ?", sceneID)
+	}
+
+	var images []Image
+	err := query.Order("sequence_number DESC").Find(&images).Error
+	if images == nil {
+		images = []Image{}
+	}
+	return images, err
+}
+
+// FindImagesByFilter 综合筛选图片
+func FindImagesByFilter(status string, startTime, endTime *time.Time, page, pageSize int) ([]Image, int64, error) {
+	db := database.GetDB()
+	var images []Image
+	var total int64
+
+	query := db.Model(&Image{})
+
+	if status != "" {
+		if status == "has_issue" {
+			query = query.Where("has_issue = ?", true)
+		} else if status == "no_issue" {
+			query = query.Where("has_issue = ? AND is_detected = ?", false, true)
+		} else if status == "undetected" {
+			query = query.Where("is_detected = ?", false)
+		}
+	}
+
+	if startTime != nil {
+		query = query.Where("created_at >= ?", *startTime)
+	}
+	if endTime != nil {
+		query = query.Where("created_at <= ?", *endTime)
+	}
+
+	query.Count(&total)
+
+	offset := (page - 1) * pageSize
+	err := query.Order("created_at DESC").Limit(pageSize).Offset(offset).Find(&images).Error
+
+	if images == nil {
+		images = []Image{}
+	}
+	return images, total, err
+}
+
+// GetFirstImageBySceneID 获取场景的第一张图片
+func GetFirstImageBySceneID(sceneID string) (*Image, error) {
+	db := database.GetDB()
+	var image Image
+	// 按序列号最小的（最早的）
+	err := db.Where("scene_id = ?", sceneID).Order("sequence_number ASC").First(&image).Error
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
+}
+
+// BatchGetFirstImagesBySceneIDs 批量获取场景首图
+func BatchGetFirstImagesBySceneIDs(sceneIDs []string) (map[string]Image, error) {
+	if len(sceneIDs) == 0 {
+		return map[string]Image{}, nil
+	}
+
+	db := database.GetDB()
+
+	// 使用窗口函数获取每个分组的第一条
+	// SQL: SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY scene_id ORDER BY sequence_number ASC) as rn FROM images WHERE scene_id IN (?)) sub WHERE rn = 1
+
+	var images []Image
+	// GORM 不直接支持窗口函数的简单构造，可以用原生SQL
+	// 或者简单点：如果场景不多，循环查；如果多，用 DISTINCT ON (Postgres特性)
+
+	err := db.Raw(`
+		SELECT DISTINCT ON (scene_id) * 
+		FROM images 
+		WHERE scene_id IN ? 
+		ORDER BY scene_id, sequence_number ASC
+	`, sceneIDs).Scan(&images).Error
+
+	if err != nil {
 		return nil, err
 	}
 
-	if len(images) == 0 {
-		return nil, nil
+	result := make(map[string]Image)
+	for _, img := range images {
+		result[img.SceneID] = img
+	}
+	return result, nil
+}
+
+// CountImagesByStatus 统计不同状态的图片数量
+func CountImagesByStatus(ctx context.Context) (map[string]int64, error) {
+	db := database.GetDB()
+	var results []struct {
+		IsDetected bool
+		HasIssue   bool
+		Count      int64
 	}
 
-	return &images[0], nil
+	// 聚合查询
+	err := db.Model(&Image{}).Select("is_detected, has_issue, count(*) as count").Group("is_detected, has_issue").Scan(&results).Error
+	if err != nil {
+		return nil, err
+	}
+
+	stats := map[string]int64{
+		"total":      0,
+		"undetected": 0,
+		"has_issue":  0,
+		"no_issue":   0,
+	}
+
+	for _, r := range results {
+		stats["total"] += r.Count
+		if !r.IsDetected {
+			stats["undetected"] += r.Count
+		} else {
+			if r.HasIssue {
+				stats["has_issue"] += r.Count
+			} else {
+				stats["no_issue"] += r.Count
+			}
+		}
+	}
+
+	return stats, nil
 }

@@ -12,7 +12,6 @@ import (
 	"foreignscan/pkg/utils"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetStyleImages godoc
@@ -129,14 +128,7 @@ func UploadStyleImage(c *gin.Context) {
 	}
 
 	// 将场景ID转换为ObjectID
-	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "无效的场景ID",
-		})
-		return
-	}
+	sceneID := sceneIDStr
 
 	// 获取上传的文件
 	file, header, err := c.Request.FormFile("file")
@@ -151,7 +143,7 @@ func UploadStyleImage(c *gin.Context) {
 
 	// 创建样式图目录
 	uploadsRoot := config.Get().UploadDir
-	styleDir := filepath.Join(uploadsRoot, "styles", sceneID.Hex())
+	styleDir := filepath.Join(uploadsRoot, "styles", sceneID)
 	if err := utils.EnsureDir(styleDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -180,7 +172,7 @@ func UploadStyleImage(c *gin.Context) {
 		Name:        c.PostForm("name"),
 		Description: c.PostForm("description"),
 		Filename:    filename,
-		Path:        filepath.ToSlash(filepath.Join("uploads", "styles", sceneID.Hex(), filename)),
+		Path:        filepath.ToSlash(filepath.Join("uploads", "styles", sceneID, filename)),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -219,16 +211,6 @@ func UpdateStyleImage(c *gin.Context) {
 	// 从URL获取样式图ID
 	id := c.Param("id")
 
-	// 将ID转换为ObjectID
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "无效的样式图ID",
-		})
-		return
-	}
-
 	// 解析请求体
 	var updatedStyleImage models.StyleImage
 	if err := c.ShouldBindJSON(&updatedStyleImage); err != nil {
@@ -250,7 +232,7 @@ func UpdateStyleImage(c *gin.Context) {
 	}
 
 	// 更新样式图字段
-	updatedStyleImage.ID = objID
+	updatedStyleImage.ID = id
 	updatedStyleImage.Filename = existingStyleImage.Filename
 	updatedStyleImage.Path = existingStyleImage.Path
 	updatedStyleImage.CreatedAt = existingStyleImage.CreatedAt
@@ -308,7 +290,7 @@ func DeleteStyleImage(c *gin.Context) {
 	}
 
 	// 删除样式图记录
-	err = styleImage.Delete()
+	err = models.DeleteStyleImage(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gorm.io/datatypes"
 )
 
 // CreateDetectionRequest 用于接收YOLO推理服务提交的检测结果请求体
@@ -42,31 +42,26 @@ type CreateDetectionRequest struct {
 // @Failure 404 {object} map[string]interface{} "图片不存在"
 // @Router /images/{id}/detections [get]
 func GetImageDetections(c *gin.Context) {
-	imageIDStr := c.Param("id")
-	oid, err := primitive.ObjectIDFromHex(imageIDStr)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "图片ID格式错误"})
-		return
-	}
+	imageID := c.Param("id")
 
 	// 校验图片是否存在（避免返回误导数据）
-	_, err = models.FindByID(imageIDStr)
+	_, err := models.FindByID(imageID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "未找到图片: " + err.Error()})
 		return
 	}
 
-	runs, err := models.FindDetectionsByImageID(oid)
+	runs, total, err := models.QueryDetections(1, 100, "", imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
 		return
 	}
 
 	type detectionRunView struct {
-		ID                  primitive.ObjectID      `json:"id"`
+		ID                  string                  `json:"id"`
 		RunID               string                  `json:"runId,omitempty"`
-		ImageID             primitive.ObjectID      `json:"imageId"`
-		SceneID             primitive.ObjectID      `json:"sceneId"`
+		ImageID             string                  `json:"imageId"`
+		SceneID             string                  `json:"sceneId"`
 		SourceFilename      string                  `json:"sourceFilename"`
 		SourcePath          string                  `json:"sourcePath"`
 		ProcessedFilename   string                  `json:"processedFilename"`
@@ -123,7 +118,7 @@ func GetImageDetections(c *gin.Context) {
 		views = append(views, v)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "count": len(views), "detections": views})
+	c.JSON(http.StatusOK, gin.H{"success": true, "count": total, "detections": views})
 }
 
 // CreateImageDetection godoc
@@ -140,8 +135,8 @@ func GetImageDetections(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /images/{id}/detections [post]
 func CreateImageDetection(c *gin.Context) {
-	imageIDStr := c.Param("id")
-	image, err := models.FindByID(imageIDStr)
+	imageID := c.Param("id")
+	image, err := models.FindByID(imageID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "未找到图片: " + err.Error()})
 		return
@@ -211,7 +206,7 @@ func CreateImageDetection(c *gin.Context) {
 		IoUThreshold:        req.IoUThreshold,
 		ConfidenceThreshold: req.ConfidenceThreshold,
 		InferenceTimeMs:     req.InferenceTimeMs,
-		Items:               req.Items,
+		Items:               datatypes.JSONSlice[models.DetectionItem](req.Items),
 		Summary:             req.Summary,
 		CreatedAt:           time.Now(),
 		UpdatedAt:           time.Now(),
@@ -223,7 +218,7 @@ func CreateImageDetection(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": true, "id": id.Hex(), "message": "检测结果写入成功"})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "id": id, "message": "检测结果写入成功"})
 }
 
 // QueryDetections godoc
@@ -242,74 +237,24 @@ func CreateImageDetection(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /detections [get]
 func QueryDetections(c *gin.Context) {
-	filter := bson.M{}
-
 	// 场景筛选
-	if sid := c.Query("sceneId"); sid != "" {
-		if oid, err := primitive.ObjectIDFromHex(sid); err == nil {
-			filter["sceneId"] = oid
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "sceneId格式错误"})
-			return
-		}
-	}
+	sceneID := c.Query("sceneId")
 
-	// 是否有问题筛选
-	if hi := c.Query("hasIssue"); hi != "" {
-		if hi == "true" || hi == "false" {
-			filter["summary.hasIssue"] = (hi == "true")
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "hasIssue应为true或false"})
-			return
-		}
-	}
+	// 分页参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
-	// 类别筛选（数组中包含某类别）
-	if cls := c.Query("class"); cls != "" {
-		filter["items.class"] = cls
-	}
-
-	// 时间范围筛选
-	startStr := c.Query("start")
-	endStr := c.Query("end")
-	if startStr != "" || endStr != "" {
-		// 解析日期字符串 (YYYY-MM-DD)
-		layout := "2006-01-02"
-		var start, end time.Time
-		var err error
-		if startStr != "" {
-			start, err = time.Parse(layout, startStr)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "开始日期格式错误"})
-				return
-			}
-		}
-		if endStr != "" {
-			end, err = time.Parse(layout, endStr)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "结束日期格式错误"})
-				return
-			}
-			// 将结束日期设为当天23:59:59，包含整天
-			end = end.Add(24 * time.Hour)
-		}
-
-		// 构造时间范围过滤
-		timeFilter := bson.M{}
-		if !start.IsZero() {
-			timeFilter["$gte"] = start
-		}
-		if !end.IsZero() {
-			timeFilter["$lt"] = end
-		}
-		filter["createdAt"] = timeFilter
-	}
-
-	runs, err := models.FindDetections(filter, nil, 0)
+	// 调用 GORM 查询方法
+	runs, total, err := models.QueryDetections(page, pageSize, sceneID, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "count": len(runs), "detections": runs})
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"count":      len(runs), // 当前页数量
+		"total":      total,     // 总数量
+		"detections": runs,
+	})
 }

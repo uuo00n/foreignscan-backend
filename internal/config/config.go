@@ -129,8 +129,7 @@ func defaultUploadDir() string {
 // Config 应用配置结构
 type Config struct {
 	Port             int    // 服务器端口
-	MongoURI         string // MongoDB连接URI
-	DatabaseName     string // 数据库名称
+	PostgresDSN      string // PostgreSQL连接DSN
 	UploadDir        string // 上传目录
 	AllowedOrigins   string // 允许的CORS源
 	DetectServiceURL string // YOLO服务地址
@@ -143,8 +142,7 @@ func Load() *Config {
 	// 默认配置
 	cfg := &Config{
 		Port:             3000,
-		MongoURI:         "mongodb://localhost:27017",
-		DatabaseName:     "foreignscan",
+		PostgresDSN:      "host=localhost user=postgres password=postgres dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai",
 		UploadDir:        defaultUploadDir(),
 		AllowedOrigins:   "*",
 		DetectServiceURL: "http://127.0.0.1:8077",
@@ -157,12 +155,8 @@ func Load() *Config {
 		}
 	}
 
-	if mongoURI := os.Getenv("MONGO_URI"); mongoURI != "" {
-		cfg.MongoURI = mongoURI
-	}
-
-	if dbName := os.Getenv("DB_NAME"); dbName != "" {
-		cfg.DatabaseName = dbName
+	if dsn := os.Getenv("POSTGRES_DSN"); dsn != "" {
+		cfg.PostgresDSN = dsn
 	}
 
 	if origins := os.Getenv("ALLOWED_ORIGINS"); origins != "" {

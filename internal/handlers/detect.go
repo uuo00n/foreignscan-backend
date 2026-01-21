@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // StartDetectRequest 前端触发推理的请求体
@@ -47,10 +46,9 @@ type DetectEntryRequest struct {
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Router /scenes/{id}/detect [post]
 func StartSceneDetect(c *gin.Context) {
-	sceneIDStr := c.Param("id")
-	sceneID, err := primitive.ObjectIDFromHex(sceneIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的场景ID: " + err.Error()})
+	sceneID := c.Param("id")
+	if sceneID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的场景ID"})
 		return
 	}
 
@@ -133,10 +131,9 @@ func GetDetectJob(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Router /images/{id}/detect [post]
 func StartImageDetect(c *gin.Context) {
-	imageIDStr := c.Param("id")
-	imageID, err := primitive.ObjectIDFromHex(imageIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的图片ID: " + err.Error()})
+	imageID := c.Param("id")
+	if imageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的图片ID"})
 		return
 	}
 
@@ -289,11 +286,7 @@ func DetectEntry(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求体错误或缺少imageId"})
 		return
 	}
-	imageID, err := primitive.ObjectIDFromHex(req.ImageID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的图片ID: " + err.Error()})
-		return
-	}
+	imageID := req.ImageID
 	if req.Weights == "" {
 		req.Weights = "best.pt"
 	}

@@ -18,8 +18,6 @@ import (
 	"foreignscan/internal/config"
 	"foreignscan/internal/models"
 	"foreignscan/internal/utils"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // DetectConfig 模型与推理配置
@@ -36,7 +34,7 @@ type DetectConfig struct {
 // DetectJob 批量推理任务
 type DetectJob struct {
 	ID        string
-	SceneID   primitive.ObjectID
+	SceneID   string
 	Status    string // pending/running/parsing/completed/failed
 	Progress  int
 	Total     int
@@ -118,10 +116,10 @@ func (m *JobManager) Subscribe(jobID string) (chan DetectJob, func()) {
 }
 
 // AcquireScene 尝试为场景加锁（防并发），成功返回true
-func (m *JobManager) AcquireScene(sceneID primitive.ObjectID, jobID string) bool {
+func (m *JobManager) AcquireScene(sceneID string, jobID string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	key := sceneID.Hex()
+	key := sceneID
 	if holder, ok := m.sceneLocks[key]; ok && holder != "" {
 		return false
 	}
@@ -130,10 +128,10 @@ func (m *JobManager) AcquireScene(sceneID primitive.ObjectID, jobID string) bool
 }
 
 // ReleaseScene 释放场景锁
-func (m *JobManager) ReleaseScene(sceneID primitive.ObjectID, jobID string) {
+func (m *JobManager) ReleaseScene(sceneID string, jobID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	key := sceneID.Hex()
+	key := sceneID
 	if holder, ok := m.sceneLocks[key]; ok && holder == jobID {
 		delete(m.sceneLocks, key)
 	}
@@ -171,7 +169,7 @@ func (m *JobManager) CancelJob(jobID string) bool {
 		}
 	}
 	// 释放场景锁
-	key := job.SceneID.Hex()
+	key := job.SceneID
 	if holder, ok := m.sceneLocks[key]; ok && holder == job.ID {
 		delete(m.sceneLocks, key)
 	}
@@ -179,9 +177,9 @@ func (m *JobManager) CancelJob(jobID string) bool {
 }
 
 // StartSceneDetect 启动指定场景的批量推理，异步执行
-func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, error) {
+func StartSceneDetect(sceneID string, cfg DetectConfig) (string, error) {
 	// 生成任务ID（使用时间戳+sceneID简化，后续可改为UUID）
-	jobID := fmt.Sprintf("detect-%s-%d", sceneID.Hex(), time.Now().UnixNano())
+	jobID := fmt.Sprintf("detect-%s-%d", sceneID, time.Now().UnixNano())
 	job := &DetectJob{
 		ID:        jobID,
 		SceneID:   sceneID,
@@ -200,7 +198,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 		t := time.Now()
 		job.EndedAt = &t
 		GetJobManager().SetJob(job)
-		return jobID, fmt.Errorf("scene %s busy", sceneID.Hex())
+		return jobID, fmt.Errorf("scene %s busy", sceneID)
 	}
 
 	// 异步执行
@@ -210,7 +208,7 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 		GetJobManager().SetJob(job)
 
 		// 步骤1：准备路径
-		sceneHex := sceneID.Hex()
+		sceneHex := sceneID
 		uploadsRoot := config.Get().UploadDir
 		sourceDir := filepath.Join(uploadsRoot, "images", sceneHex)
 		projectDir := filepath.Join(uploadsRoot, "labels")
@@ -720,12 +718,12 @@ func hasHole(items []models.DetectionItem) bool {
 // - 根据 imageID 查询图片与场景，后端调用 YOLO CLI 对单张图片进行推理
 // - 输出路径沿用 uploads/labels/<sceneId>/predict，标签优先与图片同目录或在 labels 子目录
 // - 任务状态通过内存 JobManager 管理，前端可通过 /api/detect/jobs/:id 查询
-func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, error) {
+func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 	// 生成任务ID（使用时间戳+imageID简化，后续可改为UUID）
-	jobID := fmt.Sprintf("detect-image-%s-%d", imageID.Hex(), time.Now().UnixNano())
+	jobID := fmt.Sprintf("detect-image-%s-%d", imageID, time.Now().UnixNano())
 	job := &DetectJob{
 		ID:        jobID,
-		SceneID:   primitive.NilObjectID, // 稍后填充
+		SceneID:   "", // 稍后填充
 		Status:    "pending",
 		Progress:  0,
 		Total:     1,
@@ -735,7 +733,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 	GetJobManager().SetJob(job)
 
 	// 查询图片信息以确定场景并尝试加锁
-	im, err := models.FindByID(imageID.Hex())
+	im, err := models.FindByID(imageID)
 	if err != nil || im == nil {
 		job.Status = "failed"
 		if err != nil {
@@ -754,7 +752,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 		t := time.Now()
 		job.EndedAt = &t
 		GetJobManager().SetJob(job)
-		return jobID, fmt.Errorf("scene %s busy", im.SceneID.Hex())
+		return jobID, fmt.Errorf("scene %s busy", im.SceneID)
 	}
 
 	go func() {
@@ -762,7 +760,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 		job.ctx, job.cancel = context.WithCancel(context.Background())
 		GetJobManager().SetJob(job)
 
-		sceneHex := im.SceneID.Hex()
+		sceneHex := im.SceneID
 		job.SceneID = im.SceneID
 		GetJobManager().SetJob(job)
 

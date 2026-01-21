@@ -9,7 +9,7 @@ foreignscan-backend/
 ├── cmd/ 
 │   └── server/ 
 │       ├── main.go         # 服务器入口点 
-│       └── uploads/        # 上传文件临时存储目录
+│       └── uploads/        # 默认上传目录（可通过 UPLOAD_DIR 覆盖）
 ├── docs/                   # Swagger自动生成的API文档
 │   ├── docs.go
 │   ├── swagger.json
@@ -36,7 +36,7 @@ foreignscan-backend/
 │       └── utils.go        # 通用工具函数 
 ├── scripts/
 │   └── init-db.go          # 数据库初始化脚本
-├── uploads/                # 上传文件存储目录
+├── uploads/                # 旧版上传目录（当前代码默认使用 cmd/server/uploads）
 └── go.mod                  # Go模块定义 
 ```
 
@@ -63,6 +63,46 @@ foreignscan-backend/
 
 - 安装Go 1.21或更高版本
 - 安装并运行MongoDB服务
+
+### 配置说明
+
+后端配置通过三层来源决定（优先级从高到低）：
+
+1. **系统环境变量**（如在 shell 或服务管理器中设置）
+2. 项目根目录下的 **`.env` 文件**（当前仓库已提供示例 [.env](./.env)）
+3. 代码中的默认值（见 [internal/config/config.go](./internal/config/config.go)）
+
+`.env` 中支持的关键字段包括：
+
+- `PORT`：服务监听端口，默认 `3000`
+- `MONGO_URI`：MongoDB 连接串，默认 `mongodb://localhost:27017`
+- `DB_NAME`：数据库名称，默认 `foreignscan`
+- `ALLOWED_ORIGINS`：CORS 允许的源，默认 `*`
+- `DETECT_SERVICE_URL`：YOLO 检测服务地址，默认 `http://127.0.0.1:8077`
+- `UPLOAD_DIR`：上传目录
+
+> 注意：若系统中已存在同名环境变量，`.env` 不会覆盖该变量。
+
+#### 上传目录策略
+
+最终使用的上传目录为 `config.Get().UploadDir`，其来源为：
+
+1. 若设置了环境变量或 `.env` 中的 `UPLOAD_DIR`：
+   - 若为绝对路径（如 `/data/foreignscan/uploads`），将直接使用
+   - 若为相对路径（如 `cmd/server/uploads`），会基于当前工作目录转为绝对路径
+2. 否则使用代码默认策略：
+   - 若当前工作目录在仓库内，则为 `<repoRoot>/cmd/server/uploads`
+   - 否则为 `<可执行文件所在目录>/uploads`
+
+本地开发时通常可以：
+
+- 不设置 `UPLOAD_DIR`，使用默认的 `cmd/server/uploads`
+
+生产部署时建议显式设置绝对路径，例如：
+
+```env
+UPLOAD_DIR=/data/foreignscan/uploads
+```
 
 ### 安装依赖
 

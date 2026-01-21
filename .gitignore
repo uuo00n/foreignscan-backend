@@ -1,0 +1,17 @@
+.DS_Store
+
+# IDE / Editor
+.idea/
+*.iml
+
+# Runtime uploads
+uploads/
+cmd/server/uploads/
+
+# Go build artifacts
+*.exe
+*.test
+*.out
+bin/
+dist/
+coverage.out

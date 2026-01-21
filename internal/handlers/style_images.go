@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"foreignscan/internal/config"
 	"foreignscan/internal/models"
+	internalutils "foreignscan/internal/utils"
 	"foreignscan/pkg/utils"
 
 	"github.com/gin-gonic/gin"
@@ -148,7 +150,8 @@ func UploadStyleImage(c *gin.Context) {
 	defer file.Close()
 
 	// 创建样式图目录
-	styleDir := filepath.Join("./uploads/styles", sceneID.Hex())
+	uploadsRoot := config.Get().UploadDir
+	styleDir := filepath.Join(uploadsRoot, "styles", sceneID.Hex())
 	if err := utils.EnsureDir(styleDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -160,10 +163,10 @@ func UploadStyleImage(c *gin.Context) {
 	// 生成唯一文件名
 	ext := filepath.Ext(header.Filename)
 	filename := "style_" + time.Now().Format("20060102150405") + ext
-	filePath := filepath.Join(styleDir, filename)
+	filePathFS := filepath.Join(styleDir, filename)
 
 	// 保存文件
-	if err := c.SaveUploadedFile(header, filePath); err != nil {
+	if err := c.SaveUploadedFile(header, filePathFS); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "保存文件失败: " + err.Error(),
@@ -177,7 +180,7 @@ func UploadStyleImage(c *gin.Context) {
 		Name:        c.PostForm("name"),
 		Description: c.PostForm("description"),
 		Filename:    filename,
-		Path:        filePath,
+		Path:        filepath.ToSlash(filepath.Join("uploads", "styles", sceneID.Hex(), filename)),
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
@@ -296,7 +299,7 @@ func DeleteStyleImage(c *gin.Context) {
 	}
 
 	// 删除文件
-	if err := os.Remove(styleImage.Path); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(internalutils.NormalizeUploadsLocalPath(styleImage.Path)); err != nil && !os.IsNotExist(err) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "删除文件失败: " + err.Error(),

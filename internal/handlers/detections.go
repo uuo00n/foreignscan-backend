@@ -56,70 +56,74 @@ func GetImageDetections(c *gin.Context) {
 		return
 	}
 
-    runs, err := models.FindDetectionsByImageID(oid)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
-        return
-    }
+	runs, err := models.FindDetectionsByImageID(oid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
+		return
+	}
 
-    type detectionRunView struct {
-        ID                  primitive.ObjectID      `json:"id"`
-        RunID               string                 `json:"runId,omitempty"`
-        ImageID             primitive.ObjectID      `json:"imageId"`
-        SceneID             primitive.ObjectID      `json:"sceneId"`
-        SourceFilename      string                 `json:"sourceFilename"`
-        SourcePath          string                 `json:"sourcePath"`
-        ProcessedFilename   string                 `json:"processedFilename"`
-        ProcessedPath       string                 `json:"processedPath"`
-        ModelName           string                 `json:"modelName"`
-        ModelVersion        string                 `json:"modelVersion"`
-        Device              string                 `json:"device,omitempty"`
-        IoUThreshold        float64                `json:"iouThreshold"`
-        ConfidenceThreshold float64                `json:"confidenceThreshold"`
-        InferenceTimeMs     int64                  `json:"inferenceTimeMs"`
-        Items               []models.DetectionItem `json:"items"`
-        Summary             models.DetectionSummary `json:"summary"`
-        CreatedAt           time.Time              `json:"createdAt"`
-        UpdatedAt           time.Time              `json:"updatedAt"`
-        SourceURL           string                 `json:"sourceUrl"`
-        ProcessedURL        string                 `json:"processedUrl"`
-    }
+	type detectionRunView struct {
+		ID                  primitive.ObjectID      `json:"id"`
+		RunID               string                  `json:"runId,omitempty"`
+		ImageID             primitive.ObjectID      `json:"imageId"`
+		SceneID             primitive.ObjectID      `json:"sceneId"`
+		SourceFilename      string                  `json:"sourceFilename"`
+		SourcePath          string                  `json:"sourcePath"`
+		ProcessedFilename   string                  `json:"processedFilename"`
+		ProcessedPath       string                  `json:"processedPath"`
+		ModelName           string                  `json:"modelName"`
+		ModelVersion        string                  `json:"modelVersion"`
+		Device              string                  `json:"device,omitempty"`
+		IoUThreshold        float64                 `json:"iouThreshold"`
+		ConfidenceThreshold float64                 `json:"confidenceThreshold"`
+		InferenceTimeMs     int64                   `json:"inferenceTimeMs"`
+		Items               []models.DetectionItem  `json:"items"`
+		Summary             models.DetectionSummary `json:"summary"`
+		CreatedAt           time.Time               `json:"createdAt"`
+		UpdatedAt           time.Time               `json:"updatedAt"`
+		SourceURL           string                  `json:"sourceUrl"`
+		ProcessedURL        string                  `json:"processedUrl"`
+	}
 
-    webPath := func(p string) string {
-        if p == "" { return "" }
-        s := strings.ReplaceAll(p, "\\", "/")
-        if !strings.HasPrefix(s, "/") { s = "/" + s }
-        return s
-    }
+	webPath := func(p string) string {
+		if p == "" {
+			return ""
+		}
+		s := strings.ReplaceAll(p, "\\", "/")
+		if !strings.HasPrefix(s, "/") {
+			s = "/" + s
+		}
+		return s
+	}
 
-    views := make([]detectionRunView, 0, len(runs))
-    for _, r := range runs {
-        v := detectionRunView{
-            ID: r.ID,
-            RunID: r.RunID,
-            ImageID: r.ImageID,
-            SceneID: r.SceneID,
-            SourceFilename: r.SourceFilename,
-            SourcePath: r.SourcePath,
-            ProcessedFilename: r.ProcessedFilename,
-            ProcessedPath: r.ProcessedPath,
-            ModelName: r.ModelName,
-            ModelVersion: r.ModelVersion,
-            Device: r.Device,
-            IoUThreshold: r.IoUThreshold,
-            ConfidenceThreshold: r.ConfidenceThreshold,
-            InferenceTimeMs: r.InferenceTimeMs,
-            Items: r.Items,
-            Summary: r.Summary,
-            CreatedAt: r.CreatedAt,
-            UpdatedAt: r.UpdatedAt,
-            SourceURL: webPath(r.SourcePath),
-            ProcessedURL: webPath(r.ProcessedPath),
-        }
-        views = append(views, v)
-    }
+	views := make([]detectionRunView, 0, len(runs))
+	for _, r := range runs {
+		v := detectionRunView{
+			ID:                  r.ID,
+			RunID:               r.RunID,
+			ImageID:             r.ImageID,
+			SceneID:             r.SceneID,
+			SourceFilename:      r.SourceFilename,
+			SourcePath:          r.SourcePath,
+			ProcessedFilename:   r.ProcessedFilename,
+			ProcessedPath:       r.ProcessedPath,
+			ModelName:           r.ModelName,
+			ModelVersion:        r.ModelVersion,
+			Device:              r.Device,
+			IoUThreshold:        r.IoUThreshold,
+			ConfidenceThreshold: r.ConfidenceThreshold,
+			InferenceTimeMs:     r.InferenceTimeMs,
+			Items:               r.Items,
+			Summary:             r.Summary,
+			CreatedAt:           r.CreatedAt,
+			UpdatedAt:           r.UpdatedAt,
+			SourceURL:           webPath(r.SourcePath),
+			ProcessedURL:        webPath(r.ProcessedPath),
+		}
+		views = append(views, v)
+	}
 
-    c.JSON(http.StatusOK, gin.H{"success": true, "count": len(views), "detections": views})
+	c.JSON(http.StatusOK, gin.H{"success": true, "count": len(views), "detections": views})
 }
 
 // CreateImageDetection godoc
@@ -150,48 +154,48 @@ func CreateImageDetection(c *gin.Context) {
 	}
 
 	// 如果请求中没有检测项，则尝试从 YOLO 标签文件解析
-    if len(req.Items) == 0 && req.ProcessedPath != "" {
-		// 约定：处理后的图片与标签txt存放在同一目录（uploads/labels/<sceneId>/），
-		// 标签文件与图片同名，仅扩展名不同（.txt）
-
-		// 1) 取处理后图片所在目录
-		processedDir := filepath.Dir(req.ProcessedPath)
-		// 2) 基名（不含扩展名）
-		baseName := strings.TrimSuffix(filepath.Base(req.ProcessedPath), filepath.Ext(req.ProcessedPath))
-		// 3) 标签文件路径（优先与图片同目录；若不存在则回退到子目录 labels/）
-		labelPathPrimary := filepath.Join(processedDir, baseName+".txt")
-		labelAbsPath := utils.NormalizeUploadsLocalPath(labelPathPrimary)
+	if len(req.Items) == 0 && req.ProcessedPath != "" {
+		processedAbsPath := utils.NormalizeUploadsLocalPath(req.ProcessedPath)
+		processedDir := filepath.Dir(processedAbsPath)
+		baseName := strings.TrimSuffix(filepath.Base(processedAbsPath), filepath.Ext(processedAbsPath))
+		labelAbsPath := filepath.Join(processedDir, baseName+".txt")
 		if _, err := os.Stat(labelAbsPath); os.IsNotExist(err) {
-			// 回退到 ".../labels/<name>.txt"，兼容Ultralytics默认输出结构
-			labelPathFallback := filepath.Join(processedDir, "labels", baseName+".txt")
-			labelAbsPath = utils.NormalizeUploadsLocalPath(labelPathFallback)
+			labelAbsPath = filepath.Join(processedDir, "labels", baseName+".txt")
 		}
 		imgAbsPath := utils.NormalizeUploadsLocalPath(req.SourcePath)
+		if items, err := utils.ParseYOLOLabelsToItems(labelAbsPath, imgAbsPath); err == nil {
+			req.Items = items
+		}
+	}
 
-		// 解析标签生成检测项
-        if items, err := utils.ParseYOLOLabelsToItems(labelAbsPath, imgAbsPath); err == nil {
-            req.Items = items
-        }
-    }
-
-    // 兜底生成 Summary（当请求未提供或为空且 items 非空时）
-    if req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0 {
-        sum := 0.0
-        hasHole := false
-        allBolts := len(req.Items) > 0
-        for _, it := range req.Items {
-            sum += it.Confidence
-            if strings.EqualFold(it.Class, "hole") { hasHole = true }
-            if !strings.EqualFold(it.Class, "Bolts") { allBolts = false }
-        }
-        avg := 0.0
-        if len(req.Items) > 0 { avg = sum / float64(len(req.Items)) }
-        hi := (len(req.Items) == 0) || hasHole || !allBolts
-        itype := "auto"
-        if len(req.Items) == 0 { itype = "no_object" }
-        if hasHole { itype = "hole" }
-        req.Summary = models.DetectionSummary{HasIssue: hi, IssueType: itype, ObjectCount: len(req.Items), AvgScore: avg}
-    }
+	// 兜底生成 Summary（当请求未提供或为空且 items 非空时）
+	if req.Summary.IssueType == "" && req.Summary.ObjectCount == 0 && req.Summary.AvgScore == 0 {
+		sum := 0.0
+		hasHole := false
+		allBolts := len(req.Items) > 0
+		for _, it := range req.Items {
+			sum += it.Confidence
+			if strings.EqualFold(it.Class, "hole") {
+				hasHole = true
+			}
+			if !strings.EqualFold(it.Class, "Bolts") {
+				allBolts = false
+			}
+		}
+		avg := 0.0
+		if len(req.Items) > 0 {
+			avg = sum / float64(len(req.Items))
+		}
+		hi := (len(req.Items) == 0) || hasHole || !allBolts
+		itype := "auto"
+		if len(req.Items) == 0 {
+			itype = "no_object"
+		}
+		if hasHole {
+			itype = "hole"
+		}
+		req.Summary = models.DetectionSummary{HasIssue: hi, IssueType: itype, ObjectCount: len(req.Items), AvgScore: avg}
+	}
 
 	run := &models.DetectionRun{
 		RunID:               req.RunID,
@@ -213,11 +217,11 @@ func CreateImageDetection(c *gin.Context) {
 		UpdatedAt:           time.Now(),
 	}
 
-    id, err := models.InsertDetectionRun(run)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入检测结果失败: " + err.Error()})
-        return
-    }
+	id, err := models.InsertDetectionRun(run)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "写入检测结果失败: " + err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "id": id.Hex(), "message": "检测结果写入成功"})
 }

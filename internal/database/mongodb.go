@@ -28,29 +28,29 @@ func Connect() error {
 	if cfg == nil {
 		cfg = config.Load()
 	}
-	
+
 	// 设置MongoDB连接选项
 	clientOptions := options.Client().ApplyURI(cfg.MongoURI)
-	
+
 	// 连接到MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	var err error
 	client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return err
 	}
-	
+
 	// 检查连接
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return err
 	}
-	
+
 	// 获取数据库
 	database = client.Database(cfg.DatabaseName)
-	
+
 	// 初始化集合映射
 	collections = make(map[string]*mongo.Collection)
 
@@ -60,7 +60,7 @@ func Connect() error {
 	collections["styleImages"] = database.Collection("styleImages")
 	// 新增YOLO检测结果集合
 	collections["detections"] = database.Collection("detections")
-    // 已移除未使用的集合 issues/comparisons
+	// 已移除未使用的集合 issues/comparisons
 
 	return nil
 }
@@ -70,7 +70,7 @@ func Close() error {
 	if client == nil {
 		return nil
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return client.Disconnect(ctx)
@@ -82,7 +82,7 @@ func GetCollection(name string) *mongo.Collection {
 	if col, exists := collections[name]; exists {
 		return col
 	}
-	
+
 	// 如果集合不存在于映射中，创建并添加到映射
 	collections[name] = database.Collection(name)
 	return collections[name]

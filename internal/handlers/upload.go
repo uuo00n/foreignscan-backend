@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"foreignscan/internal/config"
 	"foreignscan/internal/models"
 	"foreignscan/pkg/utils"
 
@@ -67,7 +68,8 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 创建图片专用目录
-	imagesDir := filepath.Join("uploads/images", sceneID.Hex())
+	uploadsRoot := config.Get().UploadDir
+	imagesDir := filepath.Join(uploadsRoot, "images", sceneID.Hex())
 	if err := utils.EnsureDir(imagesDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -77,14 +79,16 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 保存文件到图片目录
-	dst := filepath.Join(imagesDir, filename)
-	if err := c.SaveUploadedFile(file, dst); err != nil {
+	dstFS := filepath.Join(imagesDir, filename)
+	if err := c.SaveUploadedFile(file, dstFS); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "保存文件失败: " + err.Error(),
 		})
 		return
 	}
+
+	dstWeb := filepath.ToSlash(filepath.Join("uploads", "images", sceneID.Hex(), filename))
 
 	// 获取下一个序列号
 	sequenceNumber, err := models.GetNextSequence()
@@ -105,7 +109,7 @@ func UploadImage(c *gin.Context) {
 		Timestamp:        now,
 		Location:         location,
 		Filename:         filename,
-		Path:             dst,
+		Path:             dstWeb,
 		IsDetected:       false,
 		HasIssue:         false,
 		IssueType:        "",

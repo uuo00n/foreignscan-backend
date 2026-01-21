@@ -4,6 +4,9 @@
 .idea/
 *.iml
 
+# Local env
+.env
+
 # Runtime uploads
 uploads/
 cmd/server/uploads/

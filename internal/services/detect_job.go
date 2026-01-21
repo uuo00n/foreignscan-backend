@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"foreignscan/internal/config"
 	"foreignscan/internal/models"
 	"foreignscan/internal/utils"
 
@@ -209,10 +211,38 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 
 		// 步骤1：准备路径
 		sceneHex := sceneID.Hex()
-		sourceDir := filepath.Join("uploads", "images", sceneHex)
-		projectDir := filepath.Join("uploads", "labels")
+		uploadsRoot := config.Get().UploadDir
+		sourceDir := filepath.Join(uploadsRoot, "images", sceneHex)
+		projectDir := filepath.Join(uploadsRoot, "labels")
 		jobDir := filepath.Join(projectDir, sceneHex)
 		predictDir := filepath.Join(jobDir, "predict")
+		normalizeWebPath := func(p string) string {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				return ""
+			}
+			raw := filepath.Clean(p)
+			if filepath.IsAbs(raw) {
+				if rel, err := filepath.Rel(uploadsRoot, raw); err == nil {
+					if rel == "." {
+						return "uploads"
+					}
+					if !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) && rel != ".." {
+						return filepath.ToSlash(filepath.Join("uploads", rel))
+					}
+				}
+			}
+			s := filepath.ToSlash(raw)
+			s = strings.TrimPrefix(s, "./")
+			s = strings.TrimPrefix(s, "/")
+			if s == "uploads" {
+				return "uploads"
+			}
+			if strings.HasPrefix(s, "uploads/") {
+				return s
+			}
+			return "uploads/" + s
+		}
 
 		// 创建输出目录（后续YOLO也会创建，但这里先确保父目录存在）
 		_ = os.MkdirAll(jobDir, 0o755)
@@ -300,9 +330,9 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 					continue
 				}
 
-				sourcePath := filepath.Join("uploads", "images", sceneHex, im.Filename)
-				imagePath := utils.NormalizeUploadsLocalPath(sourcePath)
-				imagePath = strings.ReplaceAll(imagePath, "\\", "/")
+				sourcePath := filepath.ToSlash(filepath.Join("uploads", "images", sceneHex, im.Filename))
+				imageFSPath := filepath.Join(uploadsRoot, "images", sceneHex, im.Filename)
+				imagePath := filepath.ToSlash(imageFSPath)
 				reqBody := map[string]interface{}{
 					"image_path": imagePath,
 					"conf":       cfg.Conf,
@@ -375,8 +405,8 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 				processedPath := sourcePath
 				processedFilename := im.Filename
 				if strings.TrimSpace(dr.LabeledPath) != "" {
-					processedPath = utils.NormalizeUploadsLocalPath(dr.LabeledPath)
-					processedFilename = filepath.Base(processedPath)
+					processedPath = normalizeWebPath(dr.LabeledPath)
+					processedFilename = path.Base(processedPath)
 				}
 				hasIssue := (len(items) == 0) || hasHole(items) || !allBolts(items)
 				issueType := "auto"
@@ -389,14 +419,14 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 				sumDet := models.DetectionSummary{HasIssue: hasIssue, IssueType: issueType, ObjectCount: len(items), AvgScore: avgConfidence(items)}
 				// 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
 				if len(items) == 0 && strings.TrimSpace(processedPath) != "" {
-					dir := filepath.Dir(processedPath)
-					base := strings.TrimSuffix(filepath.Base(processedPath), filepath.Ext(processedPath))
-					labelPathPrimary := filepath.Join(dir, base+".txt")
-					labelAbs := utils.NormalizeUploadsLocalPath(labelPathPrimary)
+					processedFS := utils.NormalizeUploadsLocalPath(processedPath)
+					dir := filepath.Dir(processedFS)
+					base := strings.TrimSuffix(filepath.Base(processedFS), filepath.Ext(processedFS))
+					labelAbs := filepath.Join(dir, base+".txt")
 					if _, err := os.Stat(labelAbs); os.IsNotExist(err) {
-						labelAbs = utils.NormalizeUploadsLocalPath(filepath.Join(dir, "labels", base+".txt"))
+						labelAbs = filepath.Join(dir, "labels", base+".txt")
 					}
-					if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil {
+					if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, imageFSPath); err == nil {
 						items = parsed
 						hi := (len(items) == 0) || hasHole(items) || !allBolts(items)
 						itp := "auto"
@@ -536,11 +566,10 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 			}
 
 			base := strings.TrimSuffix(e.Name(), ext)
-			processedPath := filepath.Join("uploads", "labels", sceneHex, "predict", e.Name())
-			// 标签优先与图片同目录（base.txt），否则回退 predict/labels/base.txt
-			labelPath := filepath.Join("uploads", "labels", sceneHex, "predict", base+".txt")
+			processedPath := filepath.ToSlash(filepath.Join("uploads", "labels", sceneHex, "predict", e.Name()))
+			labelPath := filepath.Join(predictDir, base+".txt")
 			if _, err := os.Stat(labelPath); os.IsNotExist(err) {
-				labelPath = filepath.Join("uploads", "labels", sceneHex, "predict", "labels", base+".txt")
+				labelPath = filepath.Join(predictDir, "labels", base+".txt")
 			}
 
 			// 查找对应图片ID
@@ -577,9 +606,8 @@ func StartSceneDetect(sceneID primitive.ObjectID, cfg DetectConfig) (string, err
 				continue
 			}
 
-			// 解析标签 -> items
-			sourcePath := filepath.Join("uploads", "images", sceneHex, im.Filename)
-			items, err := utils.ParseYOLOLabelsToItems(utils.NormalizeUploadsLocalPath(labelPath), utils.NormalizeUploadsLocalPath(sourcePath))
+			sourcePath := filepath.ToSlash(filepath.Join("uploads", "images", sceneHex, im.Filename))
+			items, err := utils.ParseYOLOLabelsToItems(labelPath, filepath.Join(uploadsRoot, "images", sceneHex, im.Filename))
 			if err != nil {
 				job.Message = fmt.Sprintf("解析标签失败 %s: %v", e.Name(), err)
 				GetJobManager().SetJob(job)
@@ -739,18 +767,46 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 		GetJobManager().SetJob(job)
 
 		// 准备路径
-		sourcePath := filepath.Join("uploads", "images", sceneHex, im.Filename)
-		projectDir := filepath.Join("uploads", "labels")
+		uploadsRoot := config.Get().UploadDir
+		sourcePath := filepath.ToSlash(filepath.Join("uploads", "images", sceneHex, im.Filename))
+		sourceFSPath := filepath.Join(uploadsRoot, "images", sceneHex, im.Filename)
+		projectDir := filepath.Join(uploadsRoot, "labels")
 		jobDir := filepath.Join(projectDir, sceneHex)
 		_ = os.MkdirAll(jobDir, 0o755)
+		normalizeWebPath := func(p string) string {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				return ""
+			}
+			raw := filepath.Clean(p)
+			if filepath.IsAbs(raw) {
+				if rel, err := filepath.Rel(uploadsRoot, raw); err == nil {
+					if rel == "." {
+						return "uploads"
+					}
+					if !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) && rel != ".." {
+						return filepath.ToSlash(filepath.Join("uploads", rel))
+					}
+				}
+			}
+			s := filepath.ToSlash(raw)
+			s = strings.TrimPrefix(s, "./")
+			s = strings.TrimPrefix(s, "/")
+			if s == "uploads" {
+				return "uploads"
+			}
+			if strings.HasPrefix(s, "uploads/") {
+				return s
+			}
+			return "uploads/" + s
+		}
 
 		if cfg.ServiceURL != "" {
 			job.Status = "running"
 			job.Message = "正在调用服务推理(单图)"
 			GetJobManager().SetJob(job)
 
-			imagePath := utils.NormalizeUploadsLocalPath(sourcePath)
-			imagePath = strings.ReplaceAll(imagePath, "\\", "/")
+			imagePath := filepath.ToSlash(sourceFSPath)
 			reqBody := map[string]interface{}{
 				"image_path": imagePath,
 				"conf":       cfg.Conf,
@@ -849,19 +905,19 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 			processedPath := sourcePath
 			processedFilename := im.Filename
 			if strings.TrimSpace(dr.LabeledPath) != "" {
-				processedPath = utils.NormalizeUploadsLocalPath(dr.LabeledPath)
-				processedFilename = filepath.Base(processedPath)
+				processedPath = normalizeWebPath(dr.LabeledPath)
+				processedFilename = path.Base(processedPath)
 			}
 			// 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
 			if len(items) == 0 && strings.TrimSpace(processedPath) != "" {
-				dir := filepath.Dir(processedPath)
-				base := strings.TrimSuffix(filepath.Base(processedPath), filepath.Ext(processedPath))
-				labelPathPrimary := filepath.Join(dir, base+".txt")
-				labelAbs := utils.NormalizeUploadsLocalPath(labelPathPrimary)
+				processedFS := utils.NormalizeUploadsLocalPath(processedPath)
+				dir := filepath.Dir(processedFS)
+				base := strings.TrimSuffix(filepath.Base(processedFS), filepath.Ext(processedFS))
+				labelAbs := filepath.Join(dir, base+".txt")
 				if _, err := os.Stat(labelAbs); os.IsNotExist(err) {
-					labelAbs = utils.NormalizeUploadsLocalPath(filepath.Join(dir, "labels", base+".txt"))
+					labelAbs = filepath.Join(dir, "labels", base+".txt")
 				}
-				if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, utils.NormalizeUploadsLocalPath(sourcePath)); err == nil {
+				if parsed, err := utils.ParseYOLOLabelsToItems(labelAbs, sourceFSPath); err == nil {
 					items = parsed
 					hi := (len(items) == 0) || hasHole(items) || !allBolts(items)
 					itp := "auto"
@@ -902,7 +958,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 
 		args := []string{"detect", "predict",
 			fmt.Sprintf("model=%s", cfg.Weights),
-			fmt.Sprintf("source=%s", sourcePath),
+			fmt.Sprintf("source=%s", sourceFSPath),
 			fmt.Sprintf("project=%s", projectDir),
 			fmt.Sprintf("name=%s", sceneHex),
 			"save=True", "save_txt=True", "save_conf=True", "exist_ok=True",
@@ -936,10 +992,11 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 
 		// 处理后图片与标签路径
 		base := strings.TrimSuffix(im.Filename, filepath.Ext(im.Filename))
-		processedPath := filepath.Join("uploads", "labels", sceneHex, "predict", im.Filename)
-		labelPath := filepath.Join("uploads", "labels", sceneHex, "predict", base+".txt")
+		processedPath := filepath.ToSlash(filepath.Join("uploads", "labels", sceneHex, "predict", im.Filename))
+		predictDir := filepath.Join(jobDir, "predict")
+		labelPath := filepath.Join(predictDir, base+".txt")
 		if _, err := os.Stat(labelPath); os.IsNotExist(err) {
-			labelPath = filepath.Join("uploads", "labels", sceneHex, "predict", "labels", base+".txt")
+			labelPath = filepath.Join(predictDir, "labels", base+".txt")
 		}
 
 		// 支持取消：在解析阶段检查
@@ -953,7 +1010,7 @@ func StartImageDetect(imageID primitive.ObjectID, cfg DetectConfig) (string, err
 			GetJobManager().ReleaseScene(im.SceneID, jobID)
 			return
 		}
-		items, err := utils.ParseYOLOLabelsToItems(utils.NormalizeUploadsLocalPath(labelPath), utils.NormalizeUploadsLocalPath(sourcePath))
+		items, err := utils.ParseYOLOLabelsToItems(labelPath, sourceFSPath)
 		if err != nil {
 			job.Status = "failed"
 			job.Error = fmt.Sprintf("解析标签失败: %v", err)

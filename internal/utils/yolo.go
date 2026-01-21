@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"foreignscan/internal/config"
 	"foreignscan/internal/models"
 )
 
@@ -83,12 +84,19 @@ func ParseYOLOLabelsToItems(labelPath, imgPath string) ([]models.DetectionItem, 
 // - "labels/scene/xxx.jpg"          -> "uploads/labels/scene/xxx.jpg"
 // - "uploads/labels/scene/xxx.txt"  -> "uploads/labels/scene/xxx.txt"（保持不变）
 func NormalizeUploadsLocalPath(p string) string {
-    cleaned := filepath.Clean(strings.TrimPrefix(p, "/"))
-    cleaned = strings.ReplaceAll(cleaned, "/", string(os.PathSeparator))
-    if strings.HasPrefix(cleaned, "uploads"+string(os.PathSeparator)) || cleaned == "uploads" {
-        return cleaned
-    }
-    return filepath.Join("uploads", cleaned)
+	raw := filepath.Clean(p)
+	if filepath.IsAbs(raw) {
+		return raw
+	}
+	cleaned := filepath.Clean(strings.TrimPrefix(raw, "/"))
+	cleaned = strings.ReplaceAll(cleaned, "/", string(os.PathSeparator))
+	cleaned = strings.TrimPrefix(cleaned, "."+string(os.PathSeparator))
+	if cleaned == "uploads" {
+		cleaned = ""
+	} else if strings.HasPrefix(cleaned, "uploads"+string(os.PathSeparator)) {
+		cleaned = strings.TrimPrefix(cleaned, "uploads"+string(os.PathSeparator))
+	}
+	return filepath.Join(config.Get().UploadDir, cleaned)
 }
 
 // ClassNameFromID 简单的类别ID到名称映射（示例）

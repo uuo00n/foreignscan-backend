@@ -25,7 +25,7 @@ import (
 
 func main() {
 	// 加载配置
-	cfg := config.Load()
+	cfg := config.Get()
 
 	// 创建Gin引擎
 	r := gin.Default()
@@ -34,22 +34,25 @@ func main() {
 	middleware.Setup(r)
 
 	// 确保上传目录存在
-	if _, err := os.Stat("uploads"); os.IsNotExist(err) {
-		os.Mkdir("uploads", 0755)
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		log.Fatalf("创建上传目录失败: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "labels"), 0o755); err != nil {
+		log.Fatalf("创建 labels 目录失败: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "images"), 0o755); err != nil {
+		log.Fatalf("创建 images 目录失败: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "styles"), 0o755); err != nil {
+		log.Fatalf("创建 styles 目录失败: %v", err)
 	}
 
-	// 静态文件服务 - 使用相对路径，适合交付到客户环境
-	// 直接使用项目根目录下的uploads文件夹
-	uploadsPath := "./uploads"
-	// 确保 labels 目录存在（用于存放处理后的图片与标签）
-	if err := os.MkdirAll(filepath.Join(uploadsPath, "labels"), 0755); err != nil {
-		log.Printf("创建 uploads/labels 目录失败: %v", err)
-	}
-	r.Static("/uploads", uploadsPath)
+	// 静态文件服务
+	r.Static("/uploads", cfg.UploadDir)
 	r.Static("/public", "./public")
 
 	// 添加调试日志
-	fmt.Printf("上传目录路径: %s\n", uploadsPath)
+	fmt.Printf("上传目录路径: %s\n", cfg.UploadDir)
 
 	// 初始化数据库连接
 	if err := database.Connect(); err != nil {

@@ -15,6 +15,7 @@ import (
 	"foreignscan/internal/database"
 	"foreignscan/internal/handlers"
 	"foreignscan/internal/middleware"
+	"foreignscan/internal/models"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -57,6 +58,11 @@ func main() {
 	// 初始化数据库连接
 	if err := database.Connect(); err != nil {
 		log.Fatalf("数据库连接失败: %v", err)
+	}
+
+	// 自动迁移核心表结构
+	if err := database.AutoMigrate(&models.Scene{}, &models.Image{}, &models.StyleImage{}, &models.DetectionRun{}); err != nil {
+		log.Fatalf("数据库自动迁移失败: %v", err)
 	}
 	defer database.Close()
 

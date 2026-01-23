@@ -57,7 +57,7 @@ go mod download
 在项目根目录下创建一个 `.env` 文件（可选，用于覆盖环境变量）：
 
 ```env
-PORT=3000
+PORT=8080
 POSTGRES_DSN="host=127.0.0.1 user=postgres password=your_password dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 UPLOAD_DIR="cmd/server/uploads"
 DETECT_SERVICE_URL="http://127.0.0.1:8077"
@@ -70,13 +70,13 @@ cd cmd/server
 go run main.go
 ```
 
-服务默认监听 `http://localhost:3000`。
+服务默认监听 `http://localhost:8080`。
 
 ## API 文档
 
 服务启动后，访问以下 URL 查看完整的 API 文档：
 
-**http://localhost:3000/swagger/index.html**
+**http://localhost:8080/swagger/index.html**
 
 ## 项目结构
 

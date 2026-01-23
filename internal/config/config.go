@@ -141,7 +141,7 @@ func Load() *Config {
 
 	// 默认配置
 	cfg := &Config{
-		Port:             3000,
+		Port:             8080,
 		PostgresDSN:      "host=localhost user=postgres password=postgres dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai",
 		UploadDir:        defaultUploadDir(),
 		AllowedOrigins:   "*",

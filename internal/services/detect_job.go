@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +21,11 @@ import (
 	"foreignscan/internal/models"
 	"foreignscan/internal/utils"
 )
+
+func makeRunID(jobID, imageID, filename string) string {
+	s := sha1.Sum([]byte(jobID + "|" + imageID + "|" + filename))
+	return hex.EncodeToString(s[:])
+}
 
 // DetectConfig 模型与推理配置
 type DetectConfig struct {
@@ -330,7 +337,7 @@ func StartSceneDetect(sceneID string, cfg DetectConfig) (string, error) {
 
 				sourcePath := filepath.ToSlash(filepath.Join("uploads", "images", sceneHex, im.Filename))
 				imageFSPath := filepath.Join(uploadsRoot, "images", sceneHex, im.Filename)
-				imagePath := filepath.ToSlash(imageFSPath)
+				imagePath := sourcePath
 				reqBody := map[string]interface{}{
 					"image_path": imagePath,
 					"conf":       cfg.Conf,
@@ -439,7 +446,7 @@ func StartSceneDetect(sceneID string, cfg DetectConfig) (string, error) {
 				}
 
 				run := &models.DetectionRun{
-					RunID:               jobID + ":" + im.Filename,
+					RunID:               makeRunID(jobID, im.ID, im.Filename),
 					ImageID:             im.ID,
 					SceneID:             sceneID,
 					SourceFilename:      im.Filename,
@@ -625,7 +632,7 @@ func StartSceneDetect(sceneID string, cfg DetectConfig) (string, error) {
 			summary := models.DetectionSummary{HasIssue: hasIssue, IssueType: issueType, ObjectCount: len(items), AvgScore: avgConfidence(items)}
 
 			run := &models.DetectionRun{
-				RunID:               jobID + ":" + im.Filename,
+				RunID:               makeRunID(jobID, im.ID, im.Filename),
 				ImageID:             im.ID,
 				SceneID:             sceneID,
 				SourceFilename:      im.Filename,
@@ -804,7 +811,7 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 			job.Message = "正在调用服务推理(单图)"
 			GetJobManager().SetJob(job)
 
-			imagePath := filepath.ToSlash(sourceFSPath)
+			imagePath := sourcePath
 			reqBody := map[string]interface{}{
 				"image_path": imagePath,
 				"conf":       cfg.Conf,
@@ -929,10 +936,11 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 				}
 			}
 
-			run := &models.DetectionRun{RunID: jobID + ":" + im.Filename, ImageID: im.ID, SceneID: im.SceneID, SourceFilename: im.Filename, SourcePath: sourcePath, ProcessedFilename: processedFilename, ProcessedPath: processedPath, ModelName: cfg.ModelName, ModelVersion: cfg.ModelVersion, Device: cfg.Device, IoUThreshold: cfg.IoU, ConfidenceThreshold: cfg.Conf, InferenceTimeMs: time.Since(start).Milliseconds(), Items: items, Summary: summary, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+			run := &models.DetectionRun{RunID: makeRunID(jobID, im.ID, im.Filename), ImageID: im.ID, SceneID: im.SceneID, SourceFilename: im.Filename, SourcePath: sourcePath, ProcessedFilename: processedFilename, ProcessedPath: processedPath, ModelName: cfg.ModelName, ModelVersion: cfg.ModelVersion, Device: cfg.Device, IoUThreshold: cfg.IoU, ConfidenceThreshold: cfg.Conf, InferenceTimeMs: time.Since(start).Milliseconds(), Items: items, Summary: summary, CreatedAt: time.Now(), UpdatedAt: time.Now()}
 			if _, err := models.InsertDetectionRun(run); err != nil {
 				job.Status = "failed"
 				job.Error = fmt.Sprintf("写库失败: %v", err)
+				job.Message = job.Error
 				t := time.Now()
 				job.EndedAt = &t
 				GetJobManager().SetJob(job)
@@ -1031,7 +1039,7 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 		summary := models.DetectionSummary{HasIssue: hasIssue, IssueType: issueType, ObjectCount: len(items), AvgScore: avgConfidence(items)}
 
 		run := &models.DetectionRun{
-			RunID:               jobID + ":" + im.Filename,
+			RunID:               makeRunID(jobID, im.ID, im.Filename),
 			ImageID:             im.ID,
 			SceneID:             im.SceneID,
 			SourceFilename:      im.Filename,
@@ -1052,6 +1060,7 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 		if _, err := models.InsertDetectionRun(run); err != nil {
 			job.Status = "failed"
 			job.Error = fmt.Sprintf("写库失败: %v", err)
+			job.Message = job.Error
 			t := time.Now()
 			job.EndedAt = &t
 			GetJobManager().SetJob(job)

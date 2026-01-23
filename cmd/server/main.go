@@ -22,9 +22,14 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "foreignscan/docs" // 导入生成的docs包
+	"foreignscan/pkg/utils"
 )
 
 func main() {
+	// 初始化日志
+	utils.InitLogger()
+	defer utils.GetLogger().Sync()
+
 	// 加载配置
 	cfg := config.Get()
 
@@ -130,7 +135,11 @@ func setupRoutes(r *gin.Engine) {
 		})
 	})
 
-	// API路由组
+	// 标准健康检查
+	r.GET("/health", handlers.HealthCheck)
+	r.GET("/ready", handlers.ReadinessCheck)
+
+	// API路由组 (v1)
 	api := r.Group("/api")
 	{
 		// 获取图片列表

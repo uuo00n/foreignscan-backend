@@ -19,8 +19,8 @@ func Setup(r *gin.Engine) {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// 添加日志中间件
-	r.Use(gin.Logger())
+	// 添加日志中间件（使用 Zap）
+	r.Use(ZapLogger())
 
 	// 添加恢复中间件
 	r.Use(gin.Recovery())

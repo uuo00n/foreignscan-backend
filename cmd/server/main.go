@@ -118,12 +118,20 @@ func main() {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
+// @host localhost:3000
 // @BasePath /api
 // @schemes http
 
 // 设置路由
 func setupRoutes(r *gin.Engine) {
+	redirectToSwagger := func(c *gin.Context) {
+		c.Redirect(http.StatusTemporaryRedirect, "/swagger/index.html")
+	}
+
+	r.GET("/", redirectToSwagger)
+	r.GET("/docs", redirectToSwagger)
+	r.GET("/docs/", redirectToSwagger)
+
 	// Swagger文档路由
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

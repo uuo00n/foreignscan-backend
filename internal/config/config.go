@@ -141,33 +141,33 @@ func Load() *Config {
 
 	// 默认配置
 	cfg := &Config{
-		Port:             8080,
+		Port:             3000,
 		PostgresDSN:      "host=localhost user=postgres password=postgres dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai",
 		UploadDir:        defaultUploadDir(),
-		AllowedOrigins:   "*",
+		AllowedOrigins:   "http://localhost:8080,http://127.0.0.1:8080",
 		DetectServiceURL: "http://127.0.0.1:8077",
 	}
 
 	// 从环境变量加载配置（如果存在）
-	if port := os.Getenv("PORT"); port != "" {
+	if port := strings.TrimSpace(os.Getenv("FS_API_PORT")); port != "" {
 		if p, err := strconv.Atoi(port); err == nil {
 			cfg.Port = p
 		}
 	}
 
-	if dsn := os.Getenv("POSTGRES_DSN"); dsn != "" {
+	if dsn := strings.TrimSpace(os.Getenv("FS_POSTGRES_DSN")); dsn != "" {
 		cfg.PostgresDSN = dsn
 	}
 
-	if origins := os.Getenv("ALLOWED_ORIGINS"); origins != "" {
+	if origins := strings.TrimSpace(os.Getenv("FS_ALLOWED_ORIGINS")); origins != "" {
 		cfg.AllowedOrigins = origins
 	}
 
-	if svc := os.Getenv("DETECT_SERVICE_URL"); svc != "" {
+	if svc := strings.TrimSpace(os.Getenv("FS_DETECT_URL")); svc != "" {
 		cfg.DetectServiceURL = svc
 	}
 
-	if uploadDir := os.Getenv("UPLOAD_DIR"); uploadDir != "" {
+	if uploadDir := strings.TrimSpace(os.Getenv("FS_UPLOAD_DIR")); uploadDir != "" {
 		cfg.UploadDir = normalizeUploadDir(uploadDir)
 	}
 

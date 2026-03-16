@@ -77,7 +77,7 @@ func StartSceneDetect(c *gin.Context) {
 		Device:       req.Device,
 		Conf:         req.Conf,
 		IoU:          req.IoU,
-		ServiceURL:   config.Load().DetectServiceURL,
+		ServiceURL:   config.Get().DetectServiceURL,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "busy") {
@@ -162,7 +162,7 @@ func StartImageDetect(c *gin.Context) {
 		Device:       req.Device,
 		Conf:         req.Conf,
 		IoU:          req.IoU,
-		ServiceURL:   config.Load().DetectServiceURL,
+		ServiceURL:   config.Get().DetectServiceURL,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "busy") {
@@ -307,7 +307,7 @@ func DetectEntry(c *gin.Context) {
 		Device:       req.Device,
 		Conf:         req.Conf,
 		IoU:          req.IoU,
-		ServiceURL:   config.Load().DetectServiceURL,
+		ServiceURL:   config.Get().DetectServiceURL,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "busy") {

@@ -1,0 +1,44 @@
+services:
+  api:
+    build:
+      context: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FS_API_PORT: "3000"
+      FS_POSTGRES_DSN: "host=postgres user=${POSTGRES_USER:-postgres} password=${POSTGRES_PASSWORD:-postgres} dbname=${POSTGRES_DB:-foreignscan} port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+      FS_ALLOWED_ORIGINS: "${FS_ALLOWED_ORIGINS:-*}"
+      FS_DETECT_URL: "${FS_DETECT_URL:-http://host.docker.internal:8077}"
+      FS_UPLOAD_DIR: "/app/uploads"
+      TZ: "${TZ:-Asia/Shanghai}"
+    networks:
+      - foreignscan
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-foreignscan}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      TZ: "${TZ:-Asia/Shanghai}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - foreignscan
+    restart: unless-stopped
+
+networks:
+  foreignscan:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  uploads_data:
+  go_mod_cache:
+  go_build_cache:

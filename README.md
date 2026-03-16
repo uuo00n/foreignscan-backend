@@ -28,8 +28,143 @@
 - **编程语言**: Go (1.24+)
 - **Web 框架**: Gin
 - **数据库**: PostgreSQL
+- **容器编排**: Docker Compose
 - **ORM 框架**: GORM
 - **接口文档**: Swagger
+
+## Docker 启动
+
+推荐优先使用 Docker 版本开发和运行，数据库会随编排自动启动，不再依赖本机单独安装和维护 PostgreSQL。
+
+### 启动方式总览
+
+```bash
+# 开发环境启动（按顺序：postgres -> healthy -> api）
+./scripts/dev-up.sh
+
+# 开发环境重建（先 down，再 build+up，保留 volumes）
+./scripts/dev-rebuild.sh
+
+# 开发环境停止
+./scripts/dev-down.sh
+
+# 生产环境启动（按顺序：postgres -> healthy -> api）
+./scripts/prod-up.sh
+
+# 生产环境重建（先 down，再 build+up，保留 volumes）
+./scripts/prod-rebuild.sh
+
+# 生产环境停止
+./scripts/prod-down.sh
+```
+
+### 前置要求
+
+- **Docker**: 29+
+- **Docker Compose**: v2+
+- **YOLO 检测服务**: 仍为外部依赖，默认地址为 `http://host.docker.internal:8077`
+
+### 1. 准备 Docker 环境变量
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+默认会创建以下数据库配置：
+
+- `POSTGRES_DB=foreignscan`
+- `POSTGRES_USER=postgres`
+- `POSTGRES_PASSWORD=postgres`
+
+### 2. 推荐：使用顺序化脚本启动
+
+脚本会固定执行顺序：
+
+1. 先启动 `postgres`
+2. 等待 `postgres` 变为 `healthy`
+3. 再启动 `api`
+
+开发版（前台日志可改为 `-d` 后自行看 logs）：
+
+```bash
+./scripts/dev-up.sh
+```
+
+如果你改了 Dockerfile、Compose 配置，或者想整套容器重建但保留数据卷，直接执行：
+
+```bash
+./scripts/dev-rebuild.sh
+```
+
+生产版：
+
+```bash
+./scripts/prod-up.sh
+```
+
+生产版整套重建：
+
+```bash
+./scripts/prod-rebuild.sh
+```
+
+停止服务：
+
+```bash
+./scripts/dev-down.sh
+# 或
+./scripts/prod-down.sh
+```
+
+`./scripts/dev-rebuild.sh` / `./scripts/prod-rebuild.sh` 会先执行 `down --remove-orphans`，再执行 `up --build`，默认保留数据库和上传文件 volumes。
+
+### 3. 手动分步启动（需要明确顺序时）
+
+开发版会挂载源码目录，适合本机开发调试，同时暴露：
+
+- API: `http://localhost:3000`
+- PostgreSQL: `localhost:5432`
+
+```bash
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d postgres
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml ps
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up --build -d api
+```
+
+生产版会构建精简运行镜像，不挂载源码，数据库仅在容器网络内可见：
+
+```bash
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up -d postgres
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml ps
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up --build -d api
+```
+
+### 4. 启动后校验
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/ready
+```
+
+`/ready` 返回 `{"status":"ready"}` 说明数据库依赖已就绪。
+
+### 5. 数据与文件持久化
+
+- 开发版数据库数据保存在 Docker volume `postgres_data`
+- 开发版上传文件保存在仓库根目录 `uploads/`
+- 生产版数据库数据保存在 Docker volume `postgres_data`
+- 生产版上传文件保存在 Docker volume `uploads_data`
+
+### 6. 外部检测服务说明
+
+当前仓库未容器化 YOLO 检测服务，后端继续通过 `FS_DETECT_URL` 调用它。
+
+- 默认 Docker 地址：`http://host.docker.internal:8077`
+- 如果你的检测服务不在宿主机，请修改 `.env.docker`
+
+## 裸机启动
+
+如果你仍然需要本机直接运行 Go 服务，可以使用下面的方式。
 
 ## 快速开始
 
@@ -57,10 +192,11 @@ go mod download
 在项目根目录下创建一个 `.env` 文件（可选，用于覆盖环境变量）：
 
 ```env
-PORT=8080
-POSTGRES_DSN="host=127.0.0.1 user=postgres password=your_password dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai"
-UPLOAD_DIR="cmd/server/uploads"
-DETECT_SERVICE_URL="http://127.0.0.1:8077"
+FS_API_PORT=3000
+FS_POSTGRES_DSN="host=127.0.0.1 user=postgres password=your_password dbname=foreignscan port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+FS_UPLOAD_DIR="cmd/server/uploads"
+FS_DETECT_URL="http://127.0.0.1:8077"
+FS_ALLOWED_ORIGINS="http://localhost:8080,http://127.0.0.1:8080"
 ```
 
 ### 4. 启动服务
@@ -70,13 +206,13 @@ cd cmd/server
 go run main.go
 ```
 
-服务默认监听 `http://localhost:8080`。
+服务默认监听 `http://localhost:3000`。
 
 ## API 文档
 
 服务启动后，访问以下 URL 查看完整的 API 文档：
 
-**http://localhost:8080/swagger/index.html**
+**http://localhost:3000/swagger/index.html**
 
 ## 项目结构
 

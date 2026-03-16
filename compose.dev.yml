@@ -1,0 +1,21 @@
+services:
+  api:
+    build:
+      target: dev
+    command: >
+      sh -c "mkdir -p /app/public /app/uploads &&
+      go run ./cmd/server"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+
+  postgres:
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data

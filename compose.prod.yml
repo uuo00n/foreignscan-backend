@@ -1,0 +1,12 @@
+services:
+  api:
+    build:
+      target: runtime
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/uploads
+
+  postgres:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data

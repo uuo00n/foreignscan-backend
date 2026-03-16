@@ -348,7 +348,7 @@ func StartSceneDetect(sceneID string, cfg DetectConfig) (string, error) {
 				}
 				b, _ := json.Marshal(reqBody)
 				start := time.Now()
-				resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/detect", "application/json", bytes.NewReader(b))
+				resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/api/detect", "application/json", bytes.NewReader(b))
 				if err != nil {
 					job.Message = fmt.Sprintf("服务调用失败 %s: %v", e.Name(), err)
 					GetJobManager().SetJob(job)
@@ -822,7 +822,7 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 			}
 			b, _ := json.Marshal(reqBody)
 			start := time.Now()
-			resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/detect", "application/json", bytes.NewReader(b))
+			resp, err := http.Post(strings.TrimRight(cfg.ServiceURL, "/")+"/api/detect", "application/json", bytes.NewReader(b))
 			if err != nil {
 				job.Status = "failed"
 				job.Error = fmt.Sprintf("服务调用失败: %v", err)

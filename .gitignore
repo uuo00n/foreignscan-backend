@@ -6,6 +6,7 @@
 
 # Local env
 .env
+.env.docker
 
 # Runtime uploads
 uploads/

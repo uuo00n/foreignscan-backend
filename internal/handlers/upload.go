@@ -20,7 +20,8 @@ import (
 // @Tags upload
 // @Accept multipart/form-data
 // @Produce json
-// @Param sceneId formData string true "场景ID"
+// @Param roomId formData string true "房间ID"
+// @Param pointId formData string true "点位ID"
 // @Param file formData file true "要上传的图片文件"
 // @Success 201 {object} map[string]interface{} "成功上传图片"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
@@ -38,10 +39,28 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 获取请求中的元数据
-	sceneID := c.PostForm("sceneId")
-	// 如果没有提供场景ID，创建一个新的ID
-	if sceneID == "" {
-		sceneID = utils.GenerateObjectID()
+	roomID := c.PostForm("roomId")
+	pointID := c.PostForm("pointId")
+	if roomID == "" || pointID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "roomId 与 pointId 均为必填",
+		})
+		return
+	}
+	if _, err := models.FindPointByIDAndRoom(pointID, roomID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "点位不属于该房间",
+		})
+		return
+	}
+	if _, err := models.FindStyleImageByPointID(pointID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "点位未绑定对照图，禁止上传检测图",
+		})
+		return
 	}
 
 	location := c.PostForm("location")
@@ -59,7 +78,7 @@ func UploadImage(c *gin.Context) {
 
 	// 创建图片专用目录
 	uploadsRoot := config.Get().UploadDir
-	imagesDir := filepath.Join(uploadsRoot, "images", sceneID)
+	imagesDir := filepath.Join(uploadsRoot, "images", roomID, pointID)
 	if err := utils.EnsureDir(imagesDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
@@ -78,7 +97,7 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	dstWeb := filepath.ToSlash(filepath.Join("uploads", "images", sceneID, filename))
+	dstWeb := filepath.ToSlash(filepath.Join("uploads", "images", roomID, pointID, filename))
 
 	// 获取下一个序列号
 	sequenceNumber, err := models.GetNextSequence()
@@ -95,7 +114,8 @@ func UploadImage(c *gin.Context) {
 	newImage := models.Image{
 		ID:               utils.GenerateObjectID(),
 		SequenceNumber:   sequenceNumber,
-		SceneID:          sceneID,
+		RoomID:           roomID,
+		PointID:          pointID,
 		Timestamp:        now,
 		Location:         location,
 		Filename:         filename,
@@ -119,7 +139,7 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// 构建正确的访问路径
-	accessPath := fmt.Sprintf("/uploads/images/%s/%s", sceneID, filename)
+	accessPath := fmt.Sprintf("/uploads/images/%s/%s/%s", roomID, pointID, filename)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":        true,

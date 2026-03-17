@@ -12,7 +12,7 @@ import (
 // StyleImage 样式图模型
 type StyleImage struct {
 	ID          string    `gorm:"primaryKey;type:varchar(24)" json:"id"`
-	SceneID     string    `gorm:"index;type:varchar(24)" json:"sceneId"` // 关联的场景ID
+	PointID     string    `gorm:"uniqueIndex;type:varchar(24)" json:"pointId"` // 点位一对一绑定
 	Name        string    `gorm:"type:varchar(255)" json:"name"`         // 样式图名称
 	Description string    `gorm:"type:text" json:"description"`          // 样式图描述
 	Filename    string    `gorm:"type:varchar(255)" json:"filename"`     // 文件名
@@ -44,15 +44,15 @@ func FindAllStyleImages() ([]StyleImage, error) {
 	return styleImages, err
 }
 
-// FindStyleImagesBySceneID 根据场景ID查找样式图
-func FindStyleImagesBySceneID(sceneID string) ([]StyleImage, error) {
+// FindStyleImageByPointID 根据点位ID查找样式图
+func FindStyleImageByPointID(pointID string) (*StyleImage, error) {
 	db := database.GetDB()
-	var styleImages []StyleImage
-	err := db.Where("scene_id = ?", sceneID).Order("created_at DESC").Find(&styleImages).Error
-	if styleImages == nil {
-		styleImages = []StyleImage{}
+	var styleImage StyleImage
+	err := db.First(&styleImage, "point_id = ?", pointID).Error
+	if err != nil {
+		return nil, err
 	}
-	return styleImages, err
+	return &styleImage, nil
 }
 
 // FindStyleImageByID 根据ID查找样式图

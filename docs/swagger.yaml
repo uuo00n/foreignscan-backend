@@ -1,25 +1,5 @@
 basePath: /api
 definitions:
-  handlers.CreateComparisonRequest:
-    properties:
-      afterPath:
-        description: 处理后图片路径（必填）
-        type: string
-      beforePath:
-        description: 处理前图片路径（必填）
-        type: string
-      detectionRunId:
-        description: 可选：检测运行ID
-        type: string
-      diffInfo:
-        description: 差异信息（可选）
-      imageId:
-        description: 图片ID（必填）
-        type: string
-      remark:
-        description: 备注（可选）
-        type: string
-    type: object
   handlers.CreateDetectionRequest:
     properties:
       confidenceThreshold:
@@ -55,26 +35,21 @@ definitions:
         - $ref: '#/definitions/models.DetectionSummary'
         description: 汇总信息（是否有问题等）
     type: object
-  handlers.CreateIssueRequest:
+  handlers.DetectEntryRequest:
     properties:
-      description:
-        description: 问题说明（可选）
-        type: string
-      detectionRunId:
-        description: 可选：关联的检测运行ID
+      conf:
+        type: number
+      device:
         type: string
       imageId:
-        description: 图片ID（必填）
         type: string
-      type:
-        description: 问题类型（必填）
+      iou:
+        type: number
+      modelName:
         type: string
-    type: object
-  handlers.ErrorResponse:
-    properties:
-      error:
+      modelVersion:
         type: string
-      message:
+      weights:
         type: string
     type: object
   handlers.StartDetectRequest:
@@ -95,44 +70,64 @@ definitions:
         description: 模型版本，可选
         type: string
       weights:
-        description: 模型权重文件路径或名称，默认 best.pt
+        description: 模型权重文件路径或名称，默认由 room 配置覆盖
         type: string
+    type: object
+  handlers.importRoomsRequest:
+    properties:
+      rooms:
+        items:
+          properties:
+            description:
+              type: string
+            id:
+              type: string
+            model_path:
+              type: string
+            name:
+              type: string
+            points:
+              items:
+                properties:
+                  code:
+                    type: string
+                  id:
+                    type: string
+                  location:
+                    type: string
+                  name:
+                    type: string
+                type: object
+              type: array
+            status:
+              type: string
+          type: object
+        type: array
     type: object
   models.BoundingBox:
     properties:
       height:
-        description: 高度（像素）
         type: number
       width:
-        description: 宽度（像素）
         type: number
       x:
-        description: 左上角X（像素）
         type: number
       "y":
-        description: 左上角Y（像素）
         type: number
     type: object
   models.DetectionItem:
     properties:
       bbox:
-        allOf:
-        - $ref: '#/definitions/models.BoundingBox'
-        description: 边界框
+        $ref: '#/definitions/models.BoundingBox'
       class:
-        description: 目标类别名称
         type: string
       classId:
-        description: 目标类别ID（如YOLO的类别索引）
         type: integer
       confidence:
-        description: 置信度
         type: number
       note:
-        description: 可选备注（比如规则命中说明）
         type: string
       polygon:
-        description: 可选的分割多边形
         items:
           $ref: '#/definitions/models.PolygonPoint'
         type: array
@@ -140,16 +135,12 @@ definitions:
   models.DetectionSummary:
     properties:
       avgScore:
-        description: 平均置信度（便于排序/筛选）
         type: number
       hasIssue:
-        description: 是否存在问题
         type: boolean
       issueType:
-        description: 问题类型（业务定义）
         type: string
       objectCount:
-        description: 检测到的目标数量
         type: integer
     type: object
   models.PolygonPoint:
@@ -158,29 +149,6 @@ definitions:
         type: number
       "y":
         type: number
-    type: object
-  models.Scene:
-    properties:
-      createdAt:
-        description: 创建时间
-        type: string
-      description:
-        description: 场景描述
-        type: string
-      id:
-        type: string
-      location:
-        description: 场景位置
-        type: string
-      name:
-        description: 场景名称
-        type: string
-      status:
-        description: 场景状态
-        type: string
-      updatedAt:
-        description: 更新时间
-        type: string
     type: object
   models.StyleImage:
     properties:
@@ -201,8 +169,8 @@ definitions:
       path:
         description: 文件路径
         type: string
-      sceneId:
-        description: 关联的场景ID
+      pointId:
+        description: 点位一对一绑定
         type: string
       updatedAt:
         description: 更新时间
@@ -222,78 +190,33 @@ info:
   title: ForeignScan API
   version: "1.0"
 paths:
-  /comparisons:
-    get:
-      consumes:
-      - application/json
-      description: 支持按图片ID或检测运行ID筛选
-      parameters:
-      - description: 图片ID
-        in: query
-        name: imageId
-        type: string
-      - description: 检测运行ID
-        in: query
-        name: detectionRunId
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 查询成功
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 查询对比记录
-      tags:
-      - comparisons
+  /detect:
     post:
       consumes:
       - application/json
-      description: 保存源图与处理后图路径，并可选保存差异信息
       parameters:
-      - description: 对比信息
+      - description: 请求体
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateComparisonRequest'
+          $ref: '#/definitions/handlers.DetectEntryRequest'
       produces:
       - application/json
       responses:
-        "201":
-          description: 创建成功
+        "202":
+          description: 任务已启动，返回jobId与初始状态
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: 参数错误
+          description: 请求参数错误
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: 图片不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 创建处理前后对比记录
+      summary: 兼容入口：前端直接传 imageId 触发单图推理
       tags:
-      - comparisons
+      - detections
   /detect/jobs/{id}:
     delete:
       consumes:
@@ -380,11 +303,15 @@ paths:
     get:
       consumes:
       - application/json
-      description: 支持按场景、时间范围、是否有问题、类别等条件筛选检测运行
+      description: 支持按房间、点位、时间范围、是否有问题、类别等条件筛选检测运行
       parameters:
-      - description: 场景ID
+      - description: 房间ID
         in: query
-        name: sceneId
+        name: roomId
+        type: string
+      - description: 点位ID
+        in: query
+        name: pointId
         type: string
       - description: 是否存在问题
         in: query
@@ -423,6 +350,19 @@ paths:
       summary: 查询检测结果
       tags:
       - detections
+  /health:
+    get:
+      description: 检查服务是否存活
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 服务健康检查
+      tags:
+      - system
   /images:
     get:
       consumes:
@@ -475,7 +415,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库（单张图片）
+      description: 后端启动异步任务，调用YOLO并写入数据库（单张图片）
       parameters:
       - description: 图片ID
         in: path
@@ -500,7 +440,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: 前端一键触发单图推理
+      summary: 前端触发单图异步推理
       tags:
       - detections
   /images/{id}/detections:
@@ -572,33 +512,6 @@ paths:
       summary: 写入图片的检测结果
       tags:
       - detections
-  /images/{id}/issues:
-    get:
-      consumes:
-      - application/json
-      description: 根据图片ID获取对应问题列表
-      parameters:
-      - description: 图片ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 查询成功
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 参数错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取单个图片的所有问题
-      tags:
-      - issues
   /images/by-date:
     get:
       consumes:
@@ -631,53 +544,27 @@ paths:
       summary: 根据日期获取图片
       tags:
       - images
-  /images/by-date-scene:
-    get:
-      consumes:
-      - application/json
-      description: 获取指定日期和场景ID的所有图片
-      parameters:
-      - description: '日期 (格式: YYYY-MM-DD)'
-        in: query
-        name: date
-        required: true
-        type: string
-      - description: 场景ID
-        in: query
-        name: scene_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功获取图片列表
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 根据日期和场景ID获取图片
-      tags:
-      - images
   /images/filter:
     get:
       consumes:
       - application/json
-      description: 按状态（必填）与可选的时间范围（start/end）筛选图片。时间格式支持 YYYY-MM-DD 或 RFC3339（如 2025-11-10T15:00:00Z）。
+      description: 支持按状态、房间ID、点位ID、时间范围（start/end）筛选图片。
       parameters:
-      - description: 状态（合格/缺陷/未检测）
+      - description: 状态（已检测/未检测）
         in: query
         name: status
-        required: true
+        type: string
+      - description: 是否存在问题（true/false，仅在status=已检测时生效）
+        in: query
+        name: hasIssue
+        type: string
+      - description: 房间ID
+        in: query
+        name: roomId
+        type: string
+      - description: 点位ID
+        in: query
+        name: pointId
         type: string
       - description: 起始时间（YYYY-MM-DD 或 RFC3339）
         in: query
@@ -705,366 +592,107 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: 根据状态或状态+时间范围筛选图片
+      summary: 根据多条件筛选图片（状态/时间/房间/点位）
       tags:
       - images
-  /issues:
-    get:
-      consumes:
-      - application/json
-      description: 支持按场景、图片、问题类型筛选
-      parameters:
-      - description: 场景ID
-        in: query
-        name: sceneId
-        type: string
-      - description: 图片ID
-        in: query
-        name: imageId
-        type: string
-      - description: 问题类型
-        in: query
-        name: type
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 查询成功
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 查询问题列表
-      tags:
-      - issues
+  /predict:
     post:
       consumes:
-      - application/json
-      description: 新建问题，包含问题类型和说明；自动补充sceneId
+      - multipart/form-data
       parameters:
-      - description: 问题信息
-        in: body
-        name: body
+      - description: 房间ID
+        in: formData
+        name: roomId
         required: true
-        schema:
-          $ref: '#/definitions/handlers.CreateIssueRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 创建成功
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: 图片不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 创建问题记录
-      tags:
-      - issues
-  /scenes:
-    get:
-      consumes:
-      - application/json
-      description: 获取系统中所有可用的场景列表
+        type: string
+      - description: 点位ID
+        in: formData
+        name: pointId
+        required: true
+        type: string
+      - description: 图片文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 置信度
+        in: formData
+        name: conf
+        type: number
+      - description: IoU
+        in: formData
+        name: iou
+        type: number
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.Scene'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: 获取所有场景
-      tags:
-      - scenes
-    post:
-      consumes:
-      - application/json
-      description: 创建一个新的场景
-      parameters:
-      - description: '场景信息 (name: 场景名称, description: 场景描述, location: 场景位置, status:
-          场景状态)'
-        in: body
-        name: scene
-        required: true
-        schema:
-          $ref: '#/definitions/models.Scene'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 成功创建场景
-          schema:
             additionalProperties: true
             type: object
         "400":
-          description: 请求参数错误
+          description: Bad Request
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 创建新场景
-      tags:
-      - scenes
-  /scenes/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: 根据ID删除指定场景
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: 成功删除场景
-        "404":
-          description: 场景不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 删除场景
-      tags:
-      - scenes
-    get:
-      consumes:
-      - application/json
-      description: 根据ID获取单个场景的详细信息
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功获取场景详情
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: 场景不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取单个场景详情
-      tags:
-      - scenes
-    put:
-      consumes:
-      - application/json
-      description: 根据ID更新指定场景的信息
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 更新的场景信息
-        in: body
-        name: scene
-        required: true
-        schema:
-          $ref: '#/definitions/models.Scene'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功更新场景
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: 场景不存在
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 更新场景信息
-      tags:
-      - scenes
-  /scenes/{id}/detect:
-    post:
-      consumes:
-      - application/json
-      description: 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 推理配置，可选
-        in: body
-        name: body
-        schema:
-          $ref: '#/definitions/handlers.StartDetectRequest'
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: 任务已启动，返回jobId与初始状态
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 前端一键触发场景批量推理
+      summary: 同步推理（房间+点位）
       tags:
       - detections
-  /scenes/{id}/first-image:
+  /ready:
     get:
+      description: 检查服务依赖（如数据库）是否就绪
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 就绪探针
+      tags:
+      - system
+  /rooms/import:
+    post:
       consumes:
       - application/json
-      description: 根据场景ID获取该场景下的最新图片（按createdAt降序取第一条）
       parameters:
-      - description: 场景ID
-        in: path
-        name: id
+      - description: 房间配置
+        in: body
+        name: body
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/handlers.importRoomsRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 成功获取场景最新图片
+          description: OK
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: 场景不存在或没有图片
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取场景的最新图片
+      summary: 导入房间点位配置
       tags:
-      - scenes
-      - images
-  /scenes/{id}/images:
+      - rooms
+  /rooms/tree:
     get:
-      consumes:
-      - application/json
-      description: 获取特定场景下的所有图片列表
-      parameters:
-      - description: 场景ID
-        in: path
-        name: id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: 成功获取场景图片
+          description: OK
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取场景下的所有图片
+      summary: 获取房间-点位树
       tags:
-      - scenes
-      - images
-  /scenes/all/first-images:
-    get:
-      consumes:
-      - application/json
-      description: 获取系统中所有场景的最新图片（按createdAt降序取第一条），用于场景预览展示
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功获取所有场景的最新图片
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: 服务器错误
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 获取所有场景的最新图片
-      tags:
-      - scenes
-      - images
+      - rooms
   /style-images:
     get:
       consumes:
@@ -1089,11 +717,11 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: 上传新的样式图片并关联到特定场景
+      description: 上传或替换点位对照图（point 一对一绑定）
       parameters:
-      - description: 场景ID
+      - description: 点位ID
         in: formData
-        name: sceneId
+        name: pointId
         required: true
         type: string
       - description: 样式图文件
@@ -1108,7 +736,7 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: 成功上传样式图
           schema:
             additionalProperties: true
@@ -1123,7 +751,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: 上传样式图
+      summary: 上传点位对照图
       tags:
       - style-images
   /style-images/{id}:
@@ -1223,31 +851,31 @@ paths:
       summary: 更新样式图
       tags:
       - style-images
-  /style-images/scene/{sceneId}:
+  /style-images/point/{pointId}:
     get:
       consumes:
       - application/json
-      description: 获取特定场景下的所有样式图片列表
+      description: 每个点位仅允许绑定一张样式图
       parameters:
-      - description: 场景ID
+      - description: 点位ID
         in: path
-        name: sceneId
+        name: pointId
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: 成功获取样式图片列表
+          description: 成功获取样式图片
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: 服务器错误
+        "404":
+          description: 未绑定样式图片
           schema:
             additionalProperties: true
             type: object
-      summary: 获取指定场景的所有样式图
+      summary: 获取指定点位的样式图
       tags:
       - style-images
   /upload:
@@ -1256,9 +884,14 @@ paths:
       - multipart/form-data
       description: 上传新图片到系统
       parameters:
-      - description: 场景ID
+      - description: 房间ID
         in: formData
-        name: sceneId
+        name: roomId
+        required: true
+        type: string
+      - description: 点位ID
+        in: formData
+        name: pointId
         required: true
         type: string
       - description: 要上传的图片文件

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"foreignscan/pkg/utils"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // GetStyleImages godoc
@@ -24,7 +26,6 @@ import (
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /style-images [get]
 func GetStyleImages(c *gin.Context) {
-	// 获取所有样式图
 	styleImages, err := models.FindAllStyleImages()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -34,42 +35,35 @@ func GetStyleImages(c *gin.Context) {
 		return
 	}
 
-	// 返回JSON响应
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"styleImages": styleImages,
 	})
 }
 
-// GetStyleImagesByScene godoc
-// @Summary 获取指定场景的所有样式图
-// @Description 获取特定场景下的所有样式图片列表
+// GetStyleImageByPoint godoc
+// @Summary 获取指定点位的样式图
+// @Description 每个点位仅允许绑定一张样式图
 // @Tags style-images
 // @Accept json
 // @Produce json
-// @Param sceneId path string true "场景ID"
-// @Success 200 {object} map[string]interface{} "成功获取样式图片列表"
-// @Failure 500 {object} map[string]interface{} "服务器错误"
-// @Router /style-images/scene/{sceneId} [get]
-func GetStyleImagesByScene(c *gin.Context) {
-	// 从URL获取场景ID
-	sceneID := c.Param("sceneId")
-
-	// 查找样式图
-	styleImages, err := models.FindStyleImagesBySceneID(sceneID)
+// @Param pointId path string true "点位ID"
+// @Success 200 {object} map[string]interface{} "成功获取样式图片"
+// @Failure 404 {object} map[string]interface{} "未绑定样式图片"
+// @Router /style-images/point/{pointId} [get]
+func GetStyleImageByPoint(c *gin.Context) {
+	pointID := c.Param("pointId")
+	styleImage, err := models.FindStyleImageByPointID(pointID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "获取样式图失败: " + err.Error(),
-		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "点位未绑定对照图"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取样式图失败: " + err.Error()})
 		return
 	}
 
-	// 返回JSON响应
-	c.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"styleImages": styleImages,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "styleImage": styleImage})
 }
 
 // GetStyleImage godoc
@@ -83,115 +77,102 @@ func GetStyleImagesByScene(c *gin.Context) {
 // @Failure 404 {object} map[string]interface{} "样式图不存在"
 // @Router /style-images/{id} [get]
 func GetStyleImage(c *gin.Context) {
-	// 从URL获取样式图ID
 	id := c.Param("id")
-
-	// 查找样式图
 	styleImage, err := models.FindStyleImageByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"success": false,
-			"message": "样式图不存在: " + err.Error(),
-		})
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "样式图不存在: " + err.Error()})
 		return
 	}
 
-	// 返回JSON响应
-	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"styleImage": styleImage,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "styleImage": styleImage})
 }
 
 // UploadStyleImage godoc
-// @Summary 上传样式图
-// @Description 上传新的样式图片并关联到特定场景
+// @Summary 上传点位对照图
+// @Description 上传或替换点位对照图（point 一对一绑定）
 // @Tags style-images
 // @Accept multipart/form-data
 // @Produce json
-// @Param sceneId formData string true "场景ID"
+// @Param pointId formData string true "点位ID"
 // @Param file formData file true "样式图文件"
 // @Param name formData string false "样式图名称"
-// @Success 200 {object} map[string]interface{} "成功上传样式图"
+// @Success 201 {object} map[string]interface{} "成功上传样式图"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /style-images [post]
 func UploadStyleImage(c *gin.Context) {
-	// 获取场景ID
-	sceneIDStr := c.PostForm("sceneId")
-	if sceneIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "缺少场景ID",
-		})
+	pointID := c.PostForm("pointId")
+	if pointID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "缺少点位ID"})
 		return
 	}
 
-	// 将场景ID转换为ObjectID
-	sceneID := sceneIDStr
-
-	// 获取上传的文件
-	file, header, err := c.Request.FormFile("file")
+	point, err := models.FindPointByID(pointID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "获取上传文件失败: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "点位不存在"})
 		return
 	}
-	defer file.Close()
 
-	// 创建样式图目录
+	header, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "获取上传文件失败: " + err.Error()})
+		return
+	}
+
 	uploadsRoot := config.Get().UploadDir
-	styleDir := filepath.Join(uploadsRoot, "styles", sceneID)
+	styleDir := filepath.Join(uploadsRoot, "styles", point.RoomID, pointID)
 	if err := utils.EnsureDir(styleDir); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "创建样式图目录失败: " + err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "创建样式图目录失败: " + err.Error()})
 		return
 	}
 
-	// 生成唯一文件名
 	ext := filepath.Ext(header.Filename)
 	filename := "style_" + time.Now().Format("20060102150405") + ext
 	filePathFS := filepath.Join(styleDir, filename)
-
-	// 保存文件
 	if err := c.SaveUploadedFile(header, filePathFS); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "保存文件失败: " + err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存文件失败: " + err.Error()})
 		return
 	}
 
-	// 创建样式图记录
-	styleImage := models.StyleImage{
-		SceneID:     sceneID,
+	path := filepath.ToSlash(filepath.Join("uploads", "styles", point.RoomID, pointID, filename))
+	styleImage, findErr := models.FindStyleImageByPointID(pointID)
+	if findErr != nil && !errors.Is(findErr, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询现有对照图失败: " + findErr.Error()})
+		return
+	}
+
+	if styleImage != nil {
+		if styleImage.Path != "" {
+			_ = os.Remove(internalutils.NormalizeUploadsLocalPath(styleImage.Path))
+		}
+		styleImage.Name = c.PostForm("name")
+		styleImage.Description = c.PostForm("description")
+		styleImage.Filename = filename
+		styleImage.Path = path
+		styleImage.UpdatedAt = time.Now()
+		if err := styleImage.Update(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "更新样式图记录失败: " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "styleImage": styleImage})
+		return
+	}
+
+	created := models.StyleImage{
+		PointID:     pointID,
 		Name:        c.PostForm("name"),
 		Description: c.PostForm("description"),
 		Filename:    filename,
-		Path:        filepath.ToSlash(filepath.Join("uploads", "styles", sceneID, filename)),
+		Path:        path,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-
-	// 保存样式图记录
-	err = styleImage.Save()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "保存样式图记录失败: " + err.Error(),
-		})
+	if err := created.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存样式图记录失败: " + err.Error()})
 		return
 	}
 
-	// 返回JSON响应
-	c.JSON(http.StatusCreated, gin.H{
-		"success":    true,
-		"styleImage": styleImage,
-	})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "styleImage": created})
 }
 
 // UpdateStyleImage godoc
@@ -208,51 +189,33 @@ func UploadStyleImage(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /style-images/{id} [put]
 func UpdateStyleImage(c *gin.Context) {
-	// 从URL获取样式图ID
 	id := c.Param("id")
 
-	// 解析请求体
 	var updatedStyleImage models.StyleImage
 	if err := c.ShouldBindJSON(&updatedStyleImage); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "无效的请求数据: " + err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的请求数据: " + err.Error()})
 		return
 	}
 
-	// 查找现有样式图
 	existingStyleImage, err := models.FindStyleImageByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"success": false,
-			"message": "样式图不存在: " + err.Error(),
-		})
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "样式图不存在: " + err.Error()})
 		return
 	}
 
-	// 更新样式图字段
 	updatedStyleImage.ID = id
+	updatedStyleImage.PointID = existingStyleImage.PointID
 	updatedStyleImage.Filename = existingStyleImage.Filename
 	updatedStyleImage.Path = existingStyleImage.Path
 	updatedStyleImage.CreatedAt = existingStyleImage.CreatedAt
 	updatedStyleImage.UpdatedAt = time.Now()
 
-	// 保存更新
-	err = updatedStyleImage.Update()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "更新样式图失败: " + err.Error(),
-		})
+	if err := updatedStyleImage.Update(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "更新样式图失败: " + err.Error()})
 		return
 	}
 
-	// 返回JSON响应
-	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"styleImage": updatedStyleImage,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "styleImage": updatedStyleImage})
 }
 
 // DeleteStyleImage godoc
@@ -267,38 +230,22 @@ func UpdateStyleImage(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /style-images/{id} [delete]
 func DeleteStyleImage(c *gin.Context) {
-	// 从URL获取样式图ID
 	id := c.Param("id")
-
-	// 查找样式图
 	styleImage, err := models.FindStyleImageByID(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"success": false,
-			"message": "样式图不存在: " + err.Error(),
-		})
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "样式图不存在: " + err.Error()})
 		return
 	}
 
-	// 删除文件
 	if err := os.Remove(internalutils.NormalizeUploadsLocalPath(styleImage.Path)); err != nil && !os.IsNotExist(err) {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "删除文件失败: " + err.Error(),
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "删除文件失败: " + err.Error()})
 		return
 	}
 
-	// 删除样式图记录
-	err = models.DeleteStyleImage(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "删除样式图记录失败: " + err.Error(),
-		})
+	if err := models.DeleteStyleImage(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "删除样式图记录失败: " + err.Error()})
 		return
 	}
 
-	// 返回成功响应
 	c.Status(http.StatusNoContent)
 }

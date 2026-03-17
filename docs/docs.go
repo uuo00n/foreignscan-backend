@@ -24,59 +24,8 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/comparisons": {
-            "get": {
-                "description": "支持按图片ID或检测运行ID筛选",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "comparisons"
-                ],
-                "summary": "查询对比记录",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "图片ID",
-                        "name": "imageId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "检测运行ID",
-                        "name": "detectionRunId",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
+        "/detect": {
             "post": {
-                "description": "保存源图与处理后图路径，并可选保存差异信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -84,44 +33,30 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "comparisons"
+                    "detections"
                 ],
-                "summary": "创建处理前后对比记录",
+                "summary": "兼容入口：前端直接传 imageId 触发单图推理",
                 "parameters": [
                     {
-                        "description": "对比信息",
+                        "description": "请求体",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateComparisonRequest"
+                            "$ref": "#/definitions/handlers.DetectEntryRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "创建成功",
+                    "202": {
+                        "description": "任务已启动，返回jobId与初始状态",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "图片不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
+                        "description": "请求参数错误",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -253,7 +188,7 @@ const docTemplate = `{
         },
         "/detections": {
             "get": {
-                "description": "支持按场景、时间范围、是否有问题、类别等条件筛选检测运行",
+                "description": "支持按房间、点位、时间范围、是否有问题、类别等条件筛选检测运行",
                 "consumes": [
                     "application/json"
                 ],
@@ -267,8 +202,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "场景ID",
-                        "name": "sceneId",
+                        "description": "房间ID",
+                        "name": "roomId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "点位ID",
+                        "name": "pointId",
                         "in": "query"
                     },
                     {
@@ -316,6 +257,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "检查服务是否存活",
+                "tags": [
+                    "system"
+                ],
+                "summary": "服务健康检查",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -399,63 +360,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/images/by-date-scene": {
-            "get": {
-                "description": "获取指定日期和场景ID的所有图片",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "images"
-                ],
-                "summary": "根据日期和场景ID获取图片",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "日期 (格式: YYYY-MM-DD)",
-                        "name": "date",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "scene_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功获取图片列表",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/images/filter": {
             "get": {
-                "description": "按状态（必填）与可选的时间范围（start/end）筛选图片。时间格式支持 YYYY-MM-DD 或 RFC3339（如 2025-11-10T15:00:00Z）。",
+                "description": "支持按状态、房间ID、点位ID、时间范围（start/end）筛选图片。",
                 "consumes": [
                     "application/json"
                 ],
@@ -465,14 +372,31 @@ const docTemplate = `{
                 "tags": [
                     "images"
                 ],
-                "summary": "根据状态或状态+时间范围筛选图片",
+                "summary": "根据多条件筛选图片（状态/时间/房间/点位）",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "状态（合格/缺陷/未检测）",
+                        "description": "状态（已检测/未检测）",
                         "name": "status",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "是否存在问题（true/false，仅在status=已检测时生效）",
+                        "name": "hasIssue",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "房间ID",
+                        "name": "roomId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "点位ID",
+                        "name": "pointId",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -554,7 +478,7 @@ const docTemplate = `{
         },
         "/images/{id}/detect": {
             "post": {
-                "description": "由前端点击触发，后端启动异步任务，运行YOLO并写入数据库（单张图片）",
+                "description": "后端启动异步任务，调用YOLO并写入数据库（单张图片）",
                 "consumes": [
                     "application/json"
                 ],
@@ -564,7 +488,7 @@ const docTemplate = `{
                 "tags": [
                     "detections"
                 ],
-                "summary": "前端一键触发单图推理",
+                "summary": "前端触发单图异步推理",
                 "parameters": [
                     {
                         "type": "string",
@@ -701,430 +625,10 @@ const docTemplate = `{
                 }
             }
         },
-        "/images/{id}/issues": {
-            "get": {
-                "description": "根据图片ID获取对应问题列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "issues"
-                ],
-                "summary": "获取单个图片的所有问题",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "图片ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/issues": {
-            "get": {
-                "description": "支持按场景、图片、问题类型筛选",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "issues"
-                ],
-                "summary": "查询问题列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "sceneId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "图片ID",
-                        "name": "imageId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "问题类型",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "查询成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
+        "/predict": {
             "post": {
-                "description": "新建问题，包含问题类型和说明；自动补充sceneId",
                 "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "issues"
-                ],
-                "summary": "创建问题记录",
-                "parameters": [
-                    {
-                        "description": "问题信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.CreateIssueRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "创建成功",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "图片不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes": {
-            "get": {
-                "description": "获取系统中所有可用的场景列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes"
-                ],
-                "summary": "获取所有场景",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Scene"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "创建一个新的场景",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes"
-                ],
-                "summary": "创建新场景",
-                "parameters": [
-                    {
-                        "description": "场景信息 (name: 场景名称, description: 场景描述, location: 场景位置, status: 场景状态)",
-                        "name": "scene",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Scene"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "成功创建场景",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/all/first-images": {
-            "get": {
-                "description": "获取系统中所有场景的最新图片（按createdAt降序取第一条），用于场景预览展示",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes",
-                    "images"
-                ],
-                "summary": "获取所有场景的最新图片",
-                "responses": {
-                    "200": {
-                        "description": "成功获取所有场景的最新图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/{id}": {
-            "get": {
-                "description": "根据ID获取单个场景的详细信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes"
-                ],
-                "summary": "获取单个场景详情",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功获取场景详情",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "场景不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "根据ID更新指定场景的信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes"
-                ],
-                "summary": "更新场景信息",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新的场景信息",
-                        "name": "scene",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Scene"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功更新场景",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "场景不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "根据ID删除指定场景",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes"
-                ],
-                "summary": "删除场景",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "成功删除场景"
-                    },
-                    "404": {
-                        "description": "场景不存在",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/{id}/detect": {
-            "post": {
-                "description": "由前端点击触发，后端启动异步任务，运行YOLO并写入数据库",
-                "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -1132,34 +636,115 @@ const docTemplate = `{
                 "tags": [
                     "detections"
                 ],
-                "summary": "前端一键触发场景批量推理",
+                "summary": "同步推理（房间+点位）",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
+                        "description": "房间ID",
+                        "name": "roomId",
+                        "in": "formData",
                         "required": true
                     },
                     {
-                        "description": "推理配置，可选",
+                        "type": "string",
+                        "description": "点位ID",
+                        "name": "pointId",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "图片文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "置信度",
+                        "name": "conf",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "IoU",
+                        "name": "iou",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/ready": {
+            "get": {
+                "description": "检查服务依赖（如数据库）是否就绪",
+                "tags": [
+                    "system"
+                ],
+                "summary": "就绪探针",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/rooms/import": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "导入房间点位配置",
+                "parameters": [
+                    {
+                        "description": "房间配置",
                         "name": "body",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.StartDetectRequest"
+                            "$ref": "#/definitions/handlers.importRoomsRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "202": {
-                        "description": "任务已启动，返回jobId与初始状态",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1168,94 +753,18 @@ const docTemplate = `{
                 }
             }
         },
-        "/scenes/{id}/first-image": {
+        "/rooms/tree": {
             "get": {
-                "description": "根据场景ID获取该场景下的最新图片（按createdAt降序取第一条）",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "scenes",
-                    "images"
+                    "rooms"
                 ],
-                "summary": "获取场景的最新图片",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "获取房间-点位树",
                 "responses": {
                     "200": {
-                        "description": "成功获取场景最新图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "场景不存在或没有图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/scenes/{id}/images": {
-            "get": {
-                "description": "获取特定场景下的所有图片列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "scenes",
-                    "images"
-                ],
-                "summary": "获取场景下的所有图片",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "场景ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功获取场景图片",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "服务器错误",
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1295,7 +804,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "上传新的样式图片并关联到特定场景",
+                "description": "上传或替换点位对照图（point 一对一绑定）",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1305,12 +814,12 @@ const docTemplate = `{
                 "tags": [
                     "style-images"
                 ],
-                "summary": "上传样式图",
+                "summary": "上传点位对照图",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "场景ID",
-                        "name": "sceneId",
+                        "description": "点位ID",
+                        "name": "pointId",
                         "in": "formData",
                         "required": true
                     },
@@ -1329,7 +838,7 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "成功上传样式图",
                         "schema": {
                             "type": "object",
@@ -1353,9 +862,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/style-images/scene/{sceneId}": {
+        "/style-images/point/{pointId}": {
             "get": {
-                "description": "获取特定场景下的所有样式图片列表",
+                "description": "每个点位仅允许绑定一张样式图",
                 "consumes": [
                     "application/json"
                 ],
@@ -1365,26 +874,26 @@ const docTemplate = `{
                 "tags": [
                     "style-images"
                 ],
-                "summary": "获取指定场景的所有样式图",
+                "summary": "获取指定点位的样式图",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "场景ID",
-                        "name": "sceneId",
+                        "description": "点位ID",
+                        "name": "pointId",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功获取样式图片列表",
+                        "description": "成功获取样式图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "500": {
-                        "description": "服务器错误",
+                    "404": {
+                        "description": "未绑定样式图片",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1551,8 +1060,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "场景ID",
-                        "name": "sceneId",
+                        "description": "房间ID",
+                        "name": "roomId",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "点位ID",
+                        "name": "pointId",
                         "in": "formData",
                         "required": true
                     },
@@ -1591,34 +1107,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreateComparisonRequest": {
-            "type": "object",
-            "properties": {
-                "afterPath": {
-                    "description": "处理后图片路径（必填）",
-                    "type": "string"
-                },
-                "beforePath": {
-                    "description": "处理前图片路径（必填）",
-                    "type": "string"
-                },
-                "detectionRunId": {
-                    "description": "可选：检测运行ID",
-                    "type": "string"
-                },
-                "diffInfo": {
-                    "description": "差异信息（可选）"
-                },
-                "imageId": {
-                    "description": "图片ID（必填）",
-                    "type": "string"
-                },
-                "remark": {
-                    "description": "备注（可选）",
-                    "type": "string"
-                }
-            }
-        },
         "handlers.CreateDetectionRequest": {
             "type": "object",
             "properties": {
@@ -1673,34 +1161,28 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.CreateIssueRequest": {
+        "handlers.DetectEntryRequest": {
             "type": "object",
             "properties": {
-                "description": {
-                    "description": "问题说明（可选）",
-                    "type": "string"
+                "conf": {
+                    "type": "number"
                 },
-                "detectionRunId": {
-                    "description": "可选：关联的检测运行ID",
+                "device": {
                     "type": "string"
                 },
                 "imageId": {
-                    "description": "图片ID（必填）",
                     "type": "string"
                 },
-                "type": {
-                    "description": "问题类型（必填）",
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
+                "iou": {
+                    "type": "number"
+                },
+                "modelName": {
                     "type": "string"
                 },
-                "message": {
+                "modelVersion": {
+                    "type": "string"
+                },
+                "weights": {
                     "type": "string"
                 }
             }
@@ -1729,8 +1211,56 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "weights": {
-                    "description": "模型权重文件路径或名称，默认 best.pt",
+                    "description": "模型权重文件路径或名称，默认由 room 配置覆盖",
                     "type": "string"
+                }
+            }
+        },
+        "handlers.importRoomsRequest": {
+            "type": "object",
+            "properties": {
+                "rooms": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "description": {
+                                "type": "string"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "model_path": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "points": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "location": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -1738,19 +1268,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "height": {
-                    "description": "高度（像素）",
                     "type": "number"
                 },
                 "width": {
-                    "description": "宽度（像素）",
                     "type": "number"
                 },
                 "x": {
-                    "description": "左上角X（像素）",
                     "type": "number"
                 },
                 "y": {
-                    "description": "左上角Y（像素）",
                     "type": "number"
                 }
             }
@@ -1759,31 +1285,21 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bbox": {
-                    "description": "边界框",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.BoundingBox"
-                        }
-                    ]
+                    "$ref": "#/definitions/models.BoundingBox"
                 },
                 "class": {
-                    "description": "目标类别名称",
                     "type": "string"
                 },
                 "classId": {
-                    "description": "目标类别ID（如YOLO的类别索引）",
                     "type": "integer"
                 },
                 "confidence": {
-                    "description": "置信度",
                     "type": "number"
                 },
                 "note": {
-                    "description": "可选备注（比如规则命中说明）",
                     "type": "string"
                 },
                 "polygon": {
-                    "description": "可选的分割多边形",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.PolygonPoint"
@@ -1795,19 +1311,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "avgScore": {
-                    "description": "平均置信度（便于排序/筛选）",
                     "type": "number"
                 },
                 "hasIssue": {
-                    "description": "是否存在问题",
                     "type": "boolean"
                 },
                 "issueType": {
-                    "description": "问题类型（业务定义）",
                     "type": "string"
                 },
                 "objectCount": {
-                    "description": "检测到的目标数量",
                     "type": "integer"
                 }
             }
@@ -1820,38 +1332,6 @@ const docTemplate = `{
                 },
                 "y": {
                     "type": "number"
-                }
-            }
-        },
-        "models.Scene": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "description": "创建时间",
-                    "type": "string"
-                },
-                "description": {
-                    "description": "场景描述",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "location": {
-                    "description": "场景位置",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "场景名称",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "场景状态",
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "description": "更新时间",
-                    "type": "string"
                 }
             }
         },
@@ -1881,8 +1361,8 @@ const docTemplate = `{
                     "description": "文件路径",
                     "type": "string"
                 },
-                "sceneId": {
-                    "description": "关联的场景ID",
+                "pointId": {
+                    "description": "点位一对一绑定",
                     "type": "string"
                 },
                 "updatedAt": {

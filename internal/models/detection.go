@@ -65,7 +65,8 @@ type DetectionRun struct {
 	ID                  string                             `gorm:"primaryKey;type:varchar(24)" json:"id"`
 	RunID               string                             `gorm:"uniqueIndex;type:varchar(64)" json:"runId,omitempty"`
 	ImageID             string                             `gorm:"index;type:varchar(24)" json:"imageId"`
-	SceneID             string                             `gorm:"index;type:varchar(24)" json:"sceneId"`
+	RoomID              string                             `gorm:"index;type:varchar(24)" json:"roomId"`
+	PointID             string                             `gorm:"index;type:varchar(24)" json:"pointId"`
 	SourceFilename      string                             `gorm:"type:varchar(255)" json:"sourceFilename"`
 	SourcePath          string                             `gorm:"type:text" json:"sourcePath"`
 	ProcessedFilename   string                             `gorm:"type:varchar(255)" json:"processedFilename"`
@@ -144,17 +145,20 @@ func InsertDetectionRun(run *DetectionRun) (string, error) {
 }
 
 // QueryDetections 查询检测结果
-func QueryDetections(page, pageSize int, sceneID, imageID string) ([]DetectionRun, int64, error) {
+func QueryDetections(page, pageSize int, imageID, roomID, pointID string) ([]DetectionRun, int64, error) {
 	db := database.GetDB()
 	var runs []DetectionRun
 	var total int64
 
 	query := db.Model(&DetectionRun{})
-	if sceneID != "" {
-		query = query.Where("scene_id = ?", sceneID)
-	}
 	if imageID != "" {
 		query = query.Where("image_id = ?", imageID)
+	}
+	if roomID != "" {
+		query = query.Where("room_id = ?", roomID)
+	}
+	if pointID != "" {
+		query = query.Where("point_id = ?", pointID)
 	}
 
 	query.Count(&total)

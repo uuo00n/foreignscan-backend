@@ -51,7 +51,7 @@ func GetImageDetections(c *gin.Context) {
 		return
 	}
 
-	runs, total, err := models.QueryDetections(1, 100, "", imageID)
+	runs, total, err := models.QueryDetections(1, 100, imageID, "", "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询检测结果失败: " + err.Error()})
 		return
@@ -61,7 +61,8 @@ func GetImageDetections(c *gin.Context) {
 		ID                  string                  `json:"id"`
 		RunID               string                  `json:"runId,omitempty"`
 		ImageID             string                  `json:"imageId"`
-		SceneID             string                  `json:"sceneId"`
+		RoomID              string                  `json:"roomId"`
+		PointID             string                  `json:"pointId"`
 		SourceFilename      string                  `json:"sourceFilename"`
 		SourcePath          string                  `json:"sourcePath"`
 		ProcessedFilename   string                  `json:"processedFilename"`
@@ -97,7 +98,8 @@ func GetImageDetections(c *gin.Context) {
 			ID:                  r.ID,
 			RunID:               r.RunID,
 			ImageID:             r.ImageID,
-			SceneID:             r.SceneID,
+			RoomID:              r.RoomID,
+			PointID:             r.PointID,
 			SourceFilename:      r.SourceFilename,
 			SourcePath:          r.SourcePath,
 			ProcessedFilename:   r.ProcessedFilename,
@@ -195,7 +197,8 @@ func CreateImageDetection(c *gin.Context) {
 	run := &models.DetectionRun{
 		RunID:               req.RunID,
 		ImageID:             image.ID,
-		SceneID:             image.SceneID,
+		RoomID:              image.RoomID,
+		PointID:             image.PointID,
 		SourceFilename:      req.SourceFilename,
 		SourcePath:          req.SourcePath,
 		ProcessedFilename:   req.ProcessedFilename,
@@ -223,11 +226,12 @@ func CreateImageDetection(c *gin.Context) {
 
 // QueryDetections godoc
 // @Summary 查询检测结果
-// @Description 支持按场景、时间范围、是否有问题、类别等条件筛选检测运行
+// @Description 支持按房间、点位、时间范围、是否有问题、类别等条件筛选检测运行
 // @Tags detections
 // @Accept json
 // @Produce json
-// @Param sceneId query string false "场景ID"
+// @Param roomId query string false "房间ID"
+// @Param pointId query string false "点位ID"
 // @Param hasIssue query bool false "是否存在问题"
 // @Param class query string false "目标类别名称筛选"
 // @Param start query string false "开始日期（YYYY-MM-DD）"
@@ -237,15 +241,15 @@ func CreateImageDetection(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /detections [get]
 func QueryDetections(c *gin.Context) {
-	// 场景筛选
-	sceneID := c.Query("sceneId")
+	roomID := c.Query("roomId")
+	pointID := c.Query("pointId")
 
 	// 分页参数
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 
 	// 调用 GORM 查询方法
-	runs, total, err := models.QueryDetections(page, pageSize, sceneID, "")
+	runs, total, err := models.QueryDetections(page, pageSize, "", roomID, pointID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询失败: " + err.Error()})
 		return

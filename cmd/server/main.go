@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// 自动迁移核心表结构
-	if err := database.AutoMigrate(&models.Scene{}, &models.Image{}, &models.StyleImage{}, &models.DetectionRun{}); err != nil {
+	if err := database.AutoMigrate(&models.Room{}, &models.Point{}, &models.Image{}, &models.StyleImage{}, &models.DetectionRun{}); err != nil {
 		log.Fatalf("数据库自动迁移失败: %v", err)
 	}
 	defer database.Close()
@@ -159,9 +159,6 @@ func setupRoutes(r *gin.Engine) {
 		// 根据日期获取图片
 		api.GET("/images/by-date", handlers.GetImagesByDate)
 
-		// 根据日期和场景ID获取图片
-		api.GET("/images/by-date-scene", handlers.GetImagesByDateAndScene)
-
 		// 新增：根据状态或状态+时间范围筛选图片
 		api.GET("/images/filter", handlers.GetImagesByStatusTime)
 
@@ -169,22 +166,13 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/upload", handlers.UploadImage)
 		api.POST("/upload-image", handlers.UploadImage) // 兼容客户端的路由
 
-		// 场景相关API - 使用迁移后的Gin处理器
-		api.GET("/scenes", handlers.GetScenes)
-		api.GET("/scenes/:id", handlers.GetScene)
-		api.POST("/scenes", handlers.CreateScene)
-		api.PUT("/scenes/:id", handlers.UpdateScene)
-		api.DELETE("/scenes/:id", handlers.DeleteScene)
-		// 获取特定场景下的图片列表
-		api.GET("/scenes/:id/images", handlers.GetSceneImages)
-		// 获取特定场景下的第一张图片
-		api.GET("/scenes/:id/first-image", handlers.GetSceneFirstImage)
-		// 获取所有场景的第一张图片
-		api.GET("/scenes/all/first-images", handlers.GetAllScenesFirstImage)
+		// 房间-点位配置
+		api.GET("/rooms/tree", handlers.GetRoomsTree)
+		api.POST("/rooms/import", handlers.ImportRooms)
 
 		// 样式图片相关API - 使用迁移后的Gin处理器
 		api.GET("/style-images", handlers.GetStyleImages)
-		api.GET("/style-images/scene/:sceneId", handlers.GetStyleImagesByScene)
+		api.GET("/style-images/point/:pointId", handlers.GetStyleImageByPoint)
 		api.GET("/style-images/:id", handlers.GetStyleImage)
 		api.POST("/style-images", handlers.UploadStyleImage)
 		api.PUT("/style-images/:id", handlers.UpdateStyleImage)
@@ -194,12 +182,12 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/images/:id/detections", handlers.CreateImageDetection)
 		api.GET("/detections", handlers.QueryDetections)
 
-		// 新增：前端一键触发YOLO批量推理 & 任务查询
-		api.POST("/scenes/:id/detect", handlers.StartSceneDetect)
-		// 新增：前端一键触发单图推理
+		// 单图异步推理
 		api.POST("/images/:id/detect", handlers.StartImageDetect)
 		// 兼容前端直接调用 /api/detect，传 imageId
 		api.POST("/detect", handlers.DetectEntry)
+		// 同步推理入口（房间+点位+文件）
+		api.POST("/predict", handlers.Predict)
 		// 任务管理：取消与实时进度
 		api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
 		api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)

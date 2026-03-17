@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
-	"encoding/json"
 	"foreignscan/internal/config"
 	"foreignscan/internal/services"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +15,7 @@ import (
 // StartDetectRequest 前端触发推理的请求体
 // 说明：所有字段均可选，采用合理默认值；前端可根据模型配置传入
 type StartDetectRequest struct {
-	Weights      string  `json:"weights"`      // 模型权重文件路径或名称，默认 best.pt
+	Weights      string  `json:"weights"`      // 模型权重文件路径或名称，默认由 room 配置覆盖
 	ModelName    string  `json:"modelName"`    // 模型名称，默认 "best"
 	ModelVersion string  `json:"modelVersion"` // 模型版本，可选
 	Device       string  `json:"device"`       // 设备：cpu/cuda:0/mps，默认空（由YOLO自动选择）
@@ -32,68 +32,6 @@ type DetectEntryRequest struct {
 	Device       string  `json:"device"`
 	Conf         float64 `json:"conf"`
 	IoU          float64 `json:"iou"`
-}
-
-// StartSceneDetect godoc
-// @Summary 前端一键触发场景批量推理
-// @Description 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库
-// @Tags detections
-// @Accept json
-// @Produce json
-// @Param id path string true "场景ID"
-// @Param body body StartDetectRequest false "推理配置，可选"
-// @Success 202 {object} map[string]interface{} "任务已启动，返回jobId与初始状态"
-// @Failure 400 {object} map[string]interface{} "请求参数错误"
-// @Router /scenes/{id}/detect [post]
-func StartSceneDetect(c *gin.Context) {
-	sceneID := c.Param("id")
-	if sceneID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的场景ID"})
-		return
-	}
-
-	var req StartDetectRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		// 允许空请求体，按默认值处理
-		req = StartDetectRequest{}
-	}
-	if req.Weights == "" {
-		req.Weights = "best.pt"
-	}
-	if req.ModelName == "" {
-		req.ModelName = "best"
-	}
-	if req.Conf <= 0 {
-		req.Conf = 0.25
-	}
-	if req.IoU <= 0 {
-		req.IoU = 0.45
-	}
-
-	jobID, err := services.StartSceneDetect(sceneID, services.DetectConfig{
-		Weights:      req.Weights,
-		ModelName:    req.ModelName,
-		ModelVersion: req.ModelVersion,
-		Device:       req.Device,
-		Conf:         req.Conf,
-		IoU:          req.IoU,
-		ServiceURL:   config.Get().DetectServiceURL,
-	})
-	if err != nil {
-		if strings.Contains(err.Error(), "busy") {
-			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前场景已有进行中的任务"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "启动任务失败: " + err.Error()})
-		}
-		return
-	}
-
-	c.JSON(http.StatusAccepted, gin.H{
-		"success":   true,
-		"jobId":     jobID,
-		"status":    "pending",
-		"startedAt": time.Now(),
-	})
 }
 
 // GetDetectJob godoc
@@ -113,15 +51,12 @@ func GetDetectJob(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "未找到任务"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"job":     job,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "job": job})
 }
 
 // StartImageDetect godoc
-// @Summary 前端一键触发单图推理
-// @Description 由前端点击触发，后端启动异步任务，运行YOLO并写入数据库（单张图片）
+// @Summary 前端触发单图异步推理
+// @Description 后端启动异步任务，调用YOLO并写入数据库（单张图片）
 // @Tags detections
 // @Accept json
 // @Produce json
@@ -139,7 +74,6 @@ func StartImageDetect(c *gin.Context) {
 
 	var req StartDetectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// 允许空请求体，按默认值处理
 		req = StartDetectRequest{}
 	}
 	if req.Weights == "" {
@@ -166,19 +100,14 @@ func StartImageDetect(c *gin.Context) {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "busy") {
-			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前场景已有进行中的任务"})
+			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前房间已有进行中的任务"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "启动任务失败: " + err.Error()})
 		}
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{
-		"success":   true,
-		"jobId":     jobID,
-		"status":    "pending",
-		"startedAt": time.Now(),
-	})
+	c.JSON(http.StatusAccepted, gin.H{"success": true, "jobId": jobID, "status": "pending", "startedAt": time.Now()})
 }
 
 // CancelDetectJob godoc
@@ -227,17 +156,14 @@ func GetDetectJobStream(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "未找到任务"})
 		return
 	}
-	// 设置SSE头
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.WriteHeader(http.StatusOK)
 
-	// 订阅任务更新
 	ch, unsub := services.GetJobManager().Subscribe(jobID)
 	defer unsub()
 
-	// 发送初始状态
 	if b, err := json.Marshal(job); err == nil {
 		c.Writer.Write([]byte("data: "))
 		c.Writer.Write(b)
@@ -247,7 +173,6 @@ func GetDetectJobStream(c *gin.Context) {
 		}
 	}
 
-	// 循环接收更新直至任务结束或客户端断开
 	for {
 		select {
 		case upd, ok := <-ch:
@@ -311,17 +236,12 @@ func DetectEntry(c *gin.Context) {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "busy") {
-			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前场景已有进行中的任务"})
+			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "当前房间已有进行中的任务"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "启动任务失败: " + err.Error()})
 		}
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{
-		"success":   true,
-		"jobId":     jobID,
-		"status":    "pending",
-		"startedAt": time.Now(),
-	})
+	c.JSON(http.StatusAccepted, gin.H{"success": true, "jobId": jobID, "status": "pending", "startedAt": time.Now()})
 }

@@ -73,6 +73,15 @@ definitions:
         description: 模型权重文件路径或名称，默认由 room 配置覆盖
         type: string
     type: object
+  handlers.createPointRequest:
+    properties:
+      code:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+    type: object
   handlers.importRoomsRequest:
     properties:
       rooms:
@@ -691,6 +700,89 @@ paths:
             additionalProperties: true
             type: object
       summary: 获取房间-点位树
+      tags:
+      - rooms
+  /rooms/{roomId}/points:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 房间ID
+        in: path
+        name: roomId
+        required: true
+        type: string
+      - description: 点位信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createPointRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 新增单个点位
+      tags:
+      - rooms
+  /rooms/{roomId}/points/{pointId}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 房间ID
+        in: path
+        name: roomId
+        required: true
+        type: string
+      - description: 点位ID
+        in: path
+        name: pointId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 删除单个点位
       tags:
       - rooms
   /style-images:

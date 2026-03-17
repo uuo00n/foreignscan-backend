@@ -169,6 +169,8 @@ func setupRoutes(r *gin.Engine) {
 		// 房间-点位配置
 		api.GET("/rooms/tree", handlers.GetRoomsTree)
 		api.POST("/rooms/import", handlers.ImportRooms)
+		api.POST("/rooms/:roomId/points", handlers.CreatePoint)
+		api.DELETE("/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 
 		// 样式图片相关API - 使用迁移后的Gin处理器
 		api.GET("/style-images", handlers.GetStyleImages)

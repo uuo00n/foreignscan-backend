@@ -75,3 +75,25 @@ func DeletePoint(id string) error {
 	db := database.GetDB()
 	return db.Delete(&Point{}, "id = ?", id).Error
 }
+
+type PointAssociationCounts struct {
+	StyleImages int64 `json:"styleImages"`
+	Images      int64 `json:"images"`
+	Detections  int64 `json:"detections"`
+}
+
+func CountPointAssociations(pointID string) (PointAssociationCounts, error) {
+	db := database.GetDB()
+	counts := PointAssociationCounts{}
+
+	if err := db.Model(&StyleImage{}).Where("point_id = ?", pointID).Count(&counts.StyleImages).Error; err != nil {
+		return counts, err
+	}
+	if err := db.Model(&Image{}).Where("point_id = ?", pointID).Count(&counts.Images).Error; err != nil {
+		return counts, err
+	}
+	if err := db.Model(&DetectionRun{}).Where("point_id = ?", pointID).Count(&counts.Detections).Error; err != nil {
+		return counts, err
+	}
+	return counts, nil
+}

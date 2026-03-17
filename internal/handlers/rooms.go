@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"foreignscan/internal/database"
@@ -97,6 +98,12 @@ type importRoomsRequest struct {
 	} `json:"rooms"`
 }
 
+type createPointRequest struct {
+	Name     string `json:"name"`
+	Code     string `json:"code"`
+	Location string `json:"location"`
+}
+
 // ImportRooms godoc
 // @Summary 导入房间点位配置
 // @Tags rooms
@@ -157,4 +164,114 @@ func ImportRooms(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "导入成功（已重建 rooms/points 并清空历史检测数据）"})
+}
+
+// CreatePoint godoc
+// @Summary 新增单个点位
+// @Description 在指定房间下新增一个点位（点位ID自动生成）
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param roomId path string true "房间ID"
+// @Param body body createPointRequest true "点位信息"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /rooms/{roomId}/points [post]
+func CreatePoint(c *gin.Context) {
+	roomID := strings.TrimSpace(c.Param("roomId"))
+	if roomID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "roomId 不能为空"})
+		return
+	}
+
+	var req createPointRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求数据无效: " + err.Error()})
+		return
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "点位名称不能为空"})
+		return
+	}
+
+	if _, err := models.FindRoomByID(roomID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "房间不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询房间失败: " + err.Error()})
+		return
+	}
+
+	point := models.Point{
+		RoomID:   roomID,
+		Name:     name,
+		Code:     strings.TrimSpace(req.Code),
+		Location: strings.TrimSpace(req.Location),
+		IsActive: true,
+	}
+	if err := point.Save(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "新增点位失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": true, "point": point})
+}
+
+// DeletePoint godoc
+// @Summary 删除单个点位
+// @Description 仅允许删除无关联数据（样式图/图片/检测记录）的点位
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param roomId path string true "房间ID"
+// @Param pointId path string true "点位ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /rooms/{roomId}/points/{pointId} [delete]
+func DeletePoint(c *gin.Context) {
+	roomID := strings.TrimSpace(c.Param("roomId"))
+	pointID := strings.TrimSpace(c.Param("pointId"))
+	if roomID == "" || pointID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "roomId 与 pointId 不能为空"})
+		return
+	}
+
+	point, err := models.FindPointByIDAndRoom(pointID, roomID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "点位不存在或不属于该房间"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询点位失败: " + err.Error()})
+		return
+	}
+
+	counts, err := models.CountPointAssociations(point.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "检查点位关联数据失败: " + err.Error()})
+		return
+	}
+
+	if counts.StyleImages > 0 || counts.Images > 0 || counts.Detections > 0 {
+		c.JSON(http.StatusConflict, gin.H{
+			"success": false,
+			"message": "点位存在关联数据，禁止删除",
+			"counts":  counts,
+		})
+		return
+	}
+
+	if err := models.DeletePoint(point.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "删除点位失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "删除成功"})
 }

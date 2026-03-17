@@ -1,6 +1,8 @@
 package handlers_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"foreignscan/internal/handlers"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +17,8 @@ func setupTestRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/api/images", handlers.GetImages)
 	r.GET("/api/rooms/tree", handlers.GetRoomsTree)
+	r.POST("/api/rooms/:roomId/points", handlers.CreatePoint)
+	r.DELETE("/api/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 	return r
 }
 
@@ -42,4 +46,26 @@ func TestGetRoomsTree(t *testing.T) {
 	} else {
 		assert.Equal(t, http.StatusOK, w.Code)
 	}
+}
+
+func TestCreatePointMissingName(t *testing.T) {
+	router := setupTestRouter()
+	payload, _ := json.Marshal(map[string]string{
+		"name": "   ",
+	})
+	req, _ := http.NewRequest("POST", "/api/rooms/room1/points", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestDeletePointRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("DELETE", "/api/rooms/room1/points/point1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
 }

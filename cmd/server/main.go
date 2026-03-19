@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
+	"strings"
 	"syscall"
 	"time"
 
@@ -85,6 +87,10 @@ END $$;
 
 	// 注册路由
 	setupRoutes(r)
+	if err := validateCriticalRoutes(r); err != nil {
+		log.Fatalf("关键路由契约自检失败: %v", err)
+	}
+	log.Printf("关键路由契约自检通过: %s", strings.Join(requiredRouteContracts(), ", "))
 
 	// 创建HTTP服务器
 	srv := &http.Server{
@@ -203,6 +209,10 @@ func setupRoutes(r *gin.Engine) {
 		api.POST("/detect", handlers.DetectEntry)
 		// 同步推理入口（房间+点位+文件）
 		api.POST("/predict", handlers.Predict)
+		// 房间-模型绑定（代理到 YOLO 服务）
+		api.GET("/room-models", handlers.GetRoomModels)
+		api.PUT("/room-models/:roomId", handlers.PutRoomModel)
+		api.DELETE("/room-models/:roomId", handlers.DeleteRoomModel)
 		// 任务管理：取消与实时进度
 		api.DELETE("/detect/jobs/:id", handlers.CancelDetectJob)
 		api.GET("/detect/jobs/:id/stream", handlers.GetDetectJobStream)
@@ -210,4 +220,32 @@ func setupRoutes(r *gin.Engine) {
 
 		// 已移除问题与对比相关API（未使用）
 	}
+}
+
+func requiredRouteContracts() []string {
+	return []string{
+		http.MethodGet + " /api/rooms/tree",
+		http.MethodGet + " /api/style-images",
+		http.MethodGet + " /api/room-models",
+	}
+}
+
+func validateCriticalRoutes(r *gin.Engine) error {
+	required := requiredRouteContracts()
+	registered := make(map[string]struct{}, len(r.Routes()))
+	for _, route := range r.Routes() {
+		registered[route.Method+" "+route.Path] = struct{}{}
+	}
+
+	missing := make([]string, 0)
+	for _, route := range required {
+		if _, ok := registered[route]; !ok {
+			missing = append(missing, route)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	sort.Strings(missing)
+	return fmt.Errorf("缺少关键路由: %s", strings.Join(missing, ", "))
 }

@@ -22,6 +22,9 @@ func setupTestRouter() *gin.Engine {
 	r.POST("/api/pad/bind", handlers.BindPadWithKey)
 	r.POST("/api/rooms/:roomId/points", handlers.CreatePoint)
 	r.DELETE("/api/rooms/:roomId/points/:pointId", handlers.DeletePoint)
+	r.GET("/api/room-models", handlers.GetRoomModels)
+	r.PUT("/api/room-models/:roomId", handlers.PutRoomModel)
+	r.DELETE("/api/room-models/:roomId", handlers.DeleteRoomModel)
 	return r
 }
 
@@ -99,6 +102,34 @@ func TestBindPadWithKeyRouteRegistered(t *testing.T) {
 func TestGetPadRoomContextRouteRegistered(t *testing.T) {
 	router := setupTestRouter()
 	req, _ := http.NewRequest("GET", "/api/pad/room-context", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetRoomModelsRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("GET", "/api/room-models", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
+}
+
+func TestPutRoomModelsMissingBody(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("PUT", "/api/room-models/room1", bytes.NewReader([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestDeleteRoomModelsRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("DELETE", "/api/room-models/room1", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

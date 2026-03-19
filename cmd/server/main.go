@@ -168,7 +168,9 @@ func setupRoutes(r *gin.Engine) {
 
 		// 房间-点位配置
 		api.GET("/rooms/tree", handlers.GetRoomsTree)
+		api.GET("/pad/room-context", handlers.GetPadRoomContext)
 		api.POST("/rooms/import", handlers.ImportRooms)
+		api.PATCH("/rooms/:roomId/pad-binding", handlers.PatchRoomPadBinding)
 		api.POST("/rooms/:roomId/points", handlers.CreatePoint)
 		api.DELETE("/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 

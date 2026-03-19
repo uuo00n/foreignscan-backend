@@ -1,4 +1,4 @@
-FROM golang:1.24-bookworm AS dev
+FROM docker.m.daocloud.io/library/golang:1.24-bookworm AS dev
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 
-FROM golang:1.24-bookworm AS builder
+FROM docker.m.daocloud.io/library/golang:1.24-bookworm AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/server ./cmd/server
 
 
-FROM alpine:3.20 AS runtime
+FROM docker.m.daocloud.io/library/alpine:3.20 AS runtime
 
 WORKDIR /app
 

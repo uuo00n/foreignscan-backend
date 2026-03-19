@@ -2,14 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"foreignscan/internal/config"
+	"foreignscan/internal/models"
 	"foreignscan/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // StartDetectRequest 前端触发推理的请求体
@@ -32,6 +35,30 @@ type DetectEntryRequest struct {
 	Device       string  `json:"device"`
 	Conf         float64 `json:"conf"`
 	IoU          float64 `json:"iou"`
+}
+
+func authorizePadForImage(c *gin.Context, imageID string) bool {
+	roomFromPad, status, msg := resolveRoomByPadHeadersRequired(c)
+	if status != 0 {
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return false
+	}
+
+	image, err := models.FindByID(imageID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "图片不存在"})
+			return false
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询图片失败: " + err.Error()})
+		return false
+	}
+
+	if strings.TrimSpace(image.RoomID) != strings.TrimSpace(roomFromPad.ID) {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "图片不属于当前 pad 绑定房间"})
+		return false
+	}
+	return true
 }
 
 // GetDetectJob godoc
@@ -61,6 +88,8 @@ func GetDetectJob(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "图片ID"
+// @Param X-Pad-Id header string true "Pad ID（必填）"
+// @Param X-Pad-Key header string true "Pad 密钥（必填）"
 // @Param body body StartDetectRequest false "推理配置，可选"
 // @Success 202 {object} map[string]interface{} "任务已启动，返回jobId与初始状态"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
@@ -69,6 +98,9 @@ func StartImageDetect(c *gin.Context) {
 	imageID := c.Param("id")
 	if imageID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的图片ID"})
+		return
+	}
+	if !authorizePadForImage(c, imageID) {
 		return
 	}
 
@@ -201,6 +233,8 @@ func GetDetectJobStream(c *gin.Context) {
 // @Tags detections
 // @Accept json
 // @Produce json
+// @Param X-Pad-Id header string true "Pad ID（必填）"
+// @Param X-Pad-Key header string true "Pad 密钥（必填）"
 // @Param body body DetectEntryRequest true "请求体"
 // @Success 202 {object} map[string]interface{} "任务已启动，返回jobId与初始状态"
 // @Failure 400 {object} map[string]interface{} "请求参数错误"
@@ -212,6 +246,9 @@ func DetectEntry(c *gin.Context) {
 		return
 	}
 	imageID := req.ImageID
+	if !authorizePadForImage(c, imageID) {
+		return
+	}
 	if req.Weights == "" {
 		req.Weights = "best.pt"
 	}

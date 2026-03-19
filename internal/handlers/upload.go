@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"foreignscan/internal/config"
@@ -20,7 +21,9 @@ import (
 // @Tags upload
 // @Accept multipart/form-data
 // @Produce json
-// @Param roomId formData string true "房间ID"
+// @Param X-Pad-Id header string true "Pad ID（必填）"
+// @Param X-Pad-Key header string true "Pad 密钥（必填）"
+// @Param roomId formData string false "房间ID（可选，若传入需与Pad绑定房间一致）"
 // @Param pointId formData string true "点位ID"
 // @Param file formData file true "要上传的图片文件"
 // @Success 201 {object} map[string]interface{} "成功上传图片"
@@ -28,6 +31,12 @@ import (
 // @Failure 500 {object} map[string]interface{} "服务器错误"
 // @Router /upload [post]
 func UploadImage(c *gin.Context) {
+	roomFromPad, status, msg := resolveRoomByPadHeadersRequired(c)
+	if status != 0 {
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+
 	// 获取上传的文件
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -38,16 +47,25 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	// 获取请求中的元数据
-	roomID := c.PostForm("roomId")
-	pointID := c.PostForm("pointId")
-	if roomID == "" || pointID == "" {
+	legacyRoomID := strings.TrimSpace(c.PostForm("roomId"))
+	pointID := strings.TrimSpace(c.PostForm("pointId"))
+	if pointID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "roomId 与 pointId 均为必填",
+			"message": "pointId 为必填",
 		})
 		return
 	}
+
+	roomID := roomFromPad.ID
+	if legacyRoomID != "" && legacyRoomID != roomID {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "roomId 与 pad 绑定房间不一致",
+		})
+		return
+	}
+
 	if _, err := models.FindPointByIDAndRoom(pointID, roomID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,

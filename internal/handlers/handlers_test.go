@@ -17,6 +17,8 @@ func setupTestRouter() *gin.Engine {
 	r := gin.Default()
 	r.GET("/api/images", handlers.GetImages)
 	r.GET("/api/rooms/tree", handlers.GetRoomsTree)
+	r.GET("/api/pad/room-context", handlers.GetPadRoomContext)
+	r.PATCH("/api/rooms/:roomId/pad-binding", handlers.PatchRoomPadBinding)
 	r.POST("/api/rooms/:roomId/points", handlers.CreatePoint)
 	r.DELETE("/api/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 	return r
@@ -64,6 +66,29 @@ func TestCreatePointMissingName(t *testing.T) {
 func TestDeletePointRouteRegistered(t *testing.T) {
 	router := setupTestRouter()
 	req, _ := http.NewRequest("DELETE", "/api/rooms/room1/points/point1", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
+}
+
+func TestPatchRoomPadBindingRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	payload, _ := json.Marshal(map[string]string{
+		"padId":  "pad-001",
+		"padKey": "secret",
+	})
+	req, _ := http.NewRequest("PATCH", "/api/rooms/room1/pad-binding", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
+}
+
+func TestGetPadRoomContextRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("GET", "/api/pad/room-context", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

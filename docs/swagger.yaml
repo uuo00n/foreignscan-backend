@@ -95,6 +95,10 @@ definitions:
               type: string
             name:
               type: string
+            pad_id:
+              type: string
+            padId:
+              type: string
             points:
               items:
                 properties:
@@ -112,6 +116,13 @@ definitions:
               type: string
           type: object
         type: array
+    type: object
+  handlers.patchRoomPadBindingRequest:
+    properties:
+      padId:
+        type: string
+      padKey:
+        type: string
     type: object
   models.BoundingBox:
     properties:
@@ -204,6 +215,16 @@ paths:
       consumes:
       - application/json
       parameters:
+      - description: Pad ID（必填）
+        in: header
+        name: X-Pad-Id
+        required: true
+        type: string
+      - description: Pad 密钥（必填）
+        in: header
+        name: X-Pad-Key
+        required: true
+        type: string
       - description: 请求体
         in: body
         name: body
@@ -431,6 +452,16 @@ paths:
         name: id
         required: true
         type: string
+      - description: Pad ID（必填）
+        in: header
+        name: X-Pad-Id
+        required: true
+        type: string
+      - description: Pad 密钥（必填）
+        in: header
+        name: X-Pad-Key
+        required: true
+        type: string
       - description: 推理配置，可选
         in: body
         name: body
@@ -604,15 +635,59 @@ paths:
       summary: 根据多条件筛选图片（状态/时间/房间/点位）
       tags:
       - images
+  /pad/room-context:
+    get:
+      description: 通过 Pad 鉴权返回绑定房间及其点位列表
+      parameters:
+      - description: Pad ID（必填）
+        in: header
+        name: X-Pad-Id
+        required: true
+        type: string
+      - description: Pad 密钥（必填）
+        in: header
+        name: X-Pad-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取Pad绑定房间上下文
+      tags:
+      - rooms
   /predict:
     post:
       consumes:
       - multipart/form-data
       parameters:
-      - description: 房间ID
+      - description: Pad ID（必填）
+        in: header
+        name: X-Pad-Id
+        required: true
+        type: string
+      - description: Pad 密钥（必填）
+        in: header
+        name: X-Pad-Key
+        required: true
+        type: string
+      - description: 房间ID（可选，若传入需与Pad绑定房间一致）
         in: formData
         name: roomId
-        required: true
         type: string
       - description: 点位ID
         in: formData
@@ -667,17 +742,23 @@ paths:
       summary: 就绪探针
       tags:
       - system
-  /rooms/import:
-    post:
+  /rooms/{roomId}/pad-binding:
+    patch:
       consumes:
       - application/json
+      description: 为房间设置或更新 padId 与 padKey（padKey仅存哈希）
       parameters:
-      - description: 房间配置
+      - description: 房间ID
+        in: path
+        name: roomId
+        required: true
+        type: string
+      - description: Pad绑定信息
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.importRoomsRequest'
+          $ref: '#/definitions/handlers.patchRoomPadBindingRequest'
       produces:
       - application/json
       responses:
@@ -686,26 +767,34 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: 导入房间点位配置
-      tags:
-      - rooms
-  /rooms/tree:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+        "400":
+          description: Bad Request
           schema:
             additionalProperties: true
             type: object
-      summary: 获取房间-点位树
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 更新房间与Pad绑定
       tags:
       - rooms
   /rooms/{roomId}/points:
     post:
       consumes:
       - application/json
+      description: 在指定房间下新增一个点位（点位ID自动生成）
       parameters:
       - description: 房间ID
         in: path
@@ -748,6 +837,7 @@ paths:
     delete:
       consumes:
       - application/json
+      description: 仅允许删除无关联数据（样式图/图片/检测记录）的点位
       parameters:
       - description: 房间ID
         in: path
@@ -783,6 +873,41 @@ paths:
             additionalProperties: true
             type: object
       summary: 删除单个点位
+      tags:
+      - rooms
+  /rooms/import:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 房间配置
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.importRoomsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 导入房间点位配置
+      tags:
+      - rooms
+  /rooms/tree:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 获取房间-点位树
       tags:
       - rooms
   /style-images:
@@ -976,10 +1101,19 @@ paths:
       - multipart/form-data
       description: 上传新图片到系统
       parameters:
-      - description: 房间ID
+      - description: Pad ID（必填）
+        in: header
+        name: X-Pad-Id
+        required: true
+        type: string
+      - description: Pad 密钥（必填）
+        in: header
+        name: X-Pad-Key
+        required: true
+        type: string
+      - description: 房间ID（可选，若传入需与Pad绑定房间一致）
         in: formData
         name: roomId
-        required: true
         type: string
       - description: 点位ID
         in: formData

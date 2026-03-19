@@ -38,6 +38,20 @@ const docTemplate = `{
                 "summary": "兼容入口：前端直接传 imageId 触发单图推理",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Pad ID（必填）",
+                        "name": "X-Pad-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pad 密钥（必填）",
+                        "name": "X-Pad-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "description": "请求体",
                         "name": "body",
                         "in": "body",
@@ -498,6 +512,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Pad ID（必填）",
+                        "name": "X-Pad-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pad 密钥（必填）",
+                        "name": "X-Pad-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "description": "推理配置，可选",
                         "name": "body",
                         "in": "body",
@@ -625,6 +653,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/pad/room-context": {
+            "get": {
+                "description": "通过 Pad 鉴权返回绑定房间及其点位列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "获取Pad绑定房间上下文",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pad ID（必填）",
+                        "name": "X-Pad-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pad 密钥（必填）",
+                        "name": "X-Pad-Key",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/predict": {
             "post": {
                 "consumes": [
@@ -640,10 +719,23 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "房间ID",
-                        "name": "roomId",
-                        "in": "formData",
+                        "description": "Pad ID（必填）",
+                        "name": "X-Pad-Id",
+                        "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pad 密钥（必填）",
+                        "name": "X-Pad-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "房间ID（可选，若传入需与Pad绑定房间一致）",
+                        "name": "roomId",
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -773,8 +865,79 @@ const docTemplate = `{
                 }
             }
         },
+        "/rooms/{roomId}/pad-binding": {
+            "patch": {
+                "description": "为房间设置或更新 padId 与 padKey（padKey仅存哈希）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "更新房间与Pad绑定",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "房间ID",
+                        "name": "roomId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pad绑定信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.patchRoomPadBindingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/rooms/{roomId}/points": {
             "post": {
+                "description": "在指定房间下新增一个点位（点位ID自动生成）",
                 "consumes": [
                     "application/json"
                 ],
@@ -837,6 +1000,7 @@ const docTemplate = `{
         },
         "/rooms/{roomId}/points/{pointId}": {
             "delete": {
+                "description": "仅允许删除无关联数据（样式图/图片/检测记录）的点位",
                 "consumes": [
                     "application/json"
                 ],
@@ -1182,10 +1346,23 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "房间ID",
-                        "name": "roomId",
-                        "in": "formData",
+                        "description": "Pad ID（必填）",
+                        "name": "X-Pad-Id",
+                        "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pad 密钥（必填）",
+                        "name": "X-Pad-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "房间ID（可选，若传入需与Pad绑定房间一致）",
+                        "name": "roomId",
+                        "in": "formData"
                     },
                     {
                         "type": "string",
@@ -1372,6 +1549,12 @@ const docTemplate = `{
                             "name": {
                                 "type": "string"
                             },
+                            "padId": {
+                                "type": "string"
+                            },
+                            "pad_id": {
+                                "type": "string"
+                            },
                             "points": {
                                 "type": "array",
                                 "items": {
@@ -1397,6 +1580,17 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        },
+        "handlers.patchRoomPadBindingRequest": {
+            "type": "object",
+            "properties": {
+                "padId": {
+                    "type": "string"
+                },
+                "padKey": {
+                    "type": "string"
                 }
             }
         },

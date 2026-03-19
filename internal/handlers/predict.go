@@ -47,7 +47,9 @@ type detectServiceResponse struct {
 // @Tags detections
 // @Accept multipart/form-data
 // @Produce json
-// @Param roomId formData string true "房间ID"
+// @Param X-Pad-Id header string true "Pad ID（必填）"
+// @Param X-Pad-Key header string true "Pad 密钥（必填）"
+// @Param roomId formData string false "房间ID（可选，若传入需与Pad绑定房间一致）"
 // @Param pointId formData string true "点位ID"
 // @Param file formData file true "图片文件"
 // @Param conf formData number false "置信度"
@@ -56,10 +58,22 @@ type detectServiceResponse struct {
 // @Failure 400 {object} map[string]interface{}
 // @Router /predict [post]
 func Predict(c *gin.Context) {
-	roomID := strings.TrimSpace(c.PostForm("roomId"))
+	roomFromPad, status, msg := resolveRoomByPadHeadersRequired(c)
+	if status != 0 {
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+
+	legacyRoomID := strings.TrimSpace(c.PostForm("roomId"))
 	pointID := strings.TrimSpace(c.PostForm("pointId"))
-	if roomID == "" || pointID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "roomId 和 pointId 不能为空"})
+	if pointID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "pointId 不能为空"})
+		return
+	}
+
+	roomID := roomFromPad.ID
+	if legacyRoomID != "" && legacyRoomID != roomID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "roomId 与 pad 绑定房间不一致"})
 		return
 	}
 
@@ -148,10 +162,10 @@ func Predict(c *gin.Context) {
 	}
 
 	reqBody := map[string]interface{}{
-		"image_path":  webPath,
-		"model_path":  room.ModelPath,
-		"conf":        conf,
-		"iou":         iou,
+		"image_path": webPath,
+		"model_path": room.ModelPath,
+		"conf":       conf,
+		"iou":        iou,
 	}
 	b, _ := json.Marshal(reqBody)
 	start := time.Now()
@@ -228,12 +242,12 @@ func Predict(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"imageId":    img.ID,
-		"roomId":     roomID,
-		"pointId":    pointID,
-		"detections": items,
-		"summary":    run.Summary,
+		"success":     true,
+		"imageId":     img.ID,
+		"roomId":      roomID,
+		"pointId":     pointID,
+		"detections":  items,
+		"summary":     run.Summary,
 		"labeledPath": processedPath,
 	})
 }

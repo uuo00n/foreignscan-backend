@@ -18,7 +18,8 @@ func setupTestRouter() *gin.Engine {
 	r.GET("/api/images", handlers.GetImages)
 	r.GET("/api/rooms/tree", handlers.GetRoomsTree)
 	r.GET("/api/pad/room-context", handlers.GetPadRoomContext)
-	r.PATCH("/api/rooms/:roomId/pad-binding", handlers.PatchRoomPadBinding)
+	r.POST("/api/rooms/:roomId/pad-binding-keys", handlers.CreateRoomPadBindingKey)
+	r.POST("/api/pad/bind", handlers.BindPadWithKey)
 	r.POST("/api/rooms/:roomId/points", handlers.CreatePoint)
 	r.DELETE("/api/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 	return r
@@ -69,16 +70,25 @@ func TestDeletePointRouteRegistered(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
+	assert.Contains(t, w.Body.String(), "\"success\"")
+}
+
+func TestCreateRoomPadBindingKeyRouteRegistered(t *testing.T) {
+	router := setupTestRouter()
+	req, _ := http.NewRequest("POST", "/api/rooms/room1/pad-binding-keys", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
 	assert.NotEqual(t, http.StatusNotFound, w.Code)
 }
 
-func TestPatchRoomPadBindingRouteRegistered(t *testing.T) {
+func TestBindPadWithKeyRouteRegistered(t *testing.T) {
 	router := setupTestRouter()
 	payload, _ := json.Marshal(map[string]string{
-		"padId":  "pad-001",
-		"padKey": "secret",
+		"bindKey": "PBK-TEST",
+		"padId":   "pad-device-001",
 	})
-	req, _ := http.NewRequest("PATCH", "/api/rooms/room1/pad-binding", bytes.NewReader(payload))
+	req, _ := http.NewRequest("POST", "/api/pad/bind", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 

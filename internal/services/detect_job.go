@@ -300,15 +300,6 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 		GetJobManager().SetJob(job)
 		return jobID, fmt.Errorf("room not found")
 	}
-	if strings.TrimSpace(room.ModelPath) == "" {
-		job.Status = "failed"
-		job.Error = "房间模型路径未配置"
-		t := time.Now()
-		job.EndedAt = &t
-		GetJobManager().SetJob(job)
-		return jobID, fmt.Errorf("room model path missing")
-	}
-	cfg.Weights = room.ModelPath
 	lockKey := roomID
 	if !GetJobManager().AcquireRoom(lockKey, jobID) {
 		job.Status = "failed"
@@ -371,11 +362,9 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 			imagePath := sourcePath
 			reqBody := map[string]interface{}{
 				"image_path": imagePath,
+				"room_id":    roomID,
 				"conf":       cfg.Conf,
 				"iou":        cfg.IoU,
-			}
-			if strings.TrimSpace(cfg.Weights) != "" {
-				reqBody["model_path"] = cfg.Weights
 			}
 			b, _ := json.Marshal(reqBody)
 			start := time.Now()

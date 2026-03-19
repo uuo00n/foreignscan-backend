@@ -9,12 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// Room 机房/房间模型（绑定一个推理模型）
+// Room 机房/房间模型
 type Room struct {
 	ID            string     `gorm:"primaryKey;type:varchar(24)" json:"id"`
 	Name          string     `gorm:"type:varchar(255);not null" json:"name"`
 	Description   string     `gorm:"type:text" json:"description"`
-	ModelPath     string     `gorm:"type:text;not null" json:"modelPath"`
 	Status        string     `gorm:"type:varchar(50)" json:"status"`
 	PadID         *string    `gorm:"uniqueIndex;type:varchar(128)" json:"padId,omitempty"`
 	PadKeyHash    string     `gorm:"type:varchar(255)" json:"-"`

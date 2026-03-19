@@ -82,10 +82,6 @@ func Predict(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "房间不存在"})
 		return
 	}
-	if strings.TrimSpace(room.ModelPath) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "房间未配置模型路径"})
-		return
-	}
 
 	if _, err := models.FindPointByIDAndRoom(pointID, roomID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "点位不属于该房间"})
@@ -163,7 +159,7 @@ func Predict(c *gin.Context) {
 
 	reqBody := map[string]interface{}{
 		"image_path": webPath,
-		"model_path": room.ModelPath,
+		"room_id":    roomID,
 		"conf":       conf,
 		"iou":        iou,
 	}

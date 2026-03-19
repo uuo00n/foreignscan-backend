@@ -66,8 +66,18 @@ func main() {
 	}
 
 	// 自动迁移核心表结构
-	if err := database.AutoMigrate(&models.Room{}, &models.Point{}, &models.Image{}, &models.StyleImage{}, &models.DetectionRun{}); err != nil {
+	if err := database.AutoMigrate(&models.Room{}, &models.Point{}, &models.Image{}, &models.StyleImage{}, &models.DetectionRun{}, &models.PadBindingKey{}); err != nil {
 		log.Fatalf("数据库自动迁移失败: %v", err)
+	}
+	if err := database.GetDB().Exec(`
+DO $$
+BEGIN
+  IF to_regclass('public.rooms') IS NOT NULL THEN
+    ALTER TABLE rooms DROP COLUMN IF EXISTS model_path;
+  END IF;
+END $$;
+`).Error; err != nil {
+		log.Fatalf("数据库字段迁移失败（删除 rooms.model_path）: %v", err)
 	}
 	defer database.Close()
 
@@ -169,8 +179,9 @@ func setupRoutes(r *gin.Engine) {
 		// 房间-点位配置
 		api.GET("/rooms/tree", handlers.GetRoomsTree)
 		api.GET("/pad/room-context", handlers.GetPadRoomContext)
+		api.POST("/pad/bind", handlers.BindPadWithKey)
 		api.POST("/rooms/import", handlers.ImportRooms)
-		api.PATCH("/rooms/:roomId/pad-binding", handlers.PatchRoomPadBinding)
+		api.POST("/rooms/:roomId/pad-binding-keys", handlers.CreateRoomPadBindingKey)
 		api.POST("/rooms/:roomId/points", handlers.CreatePoint)
 		api.DELETE("/rooms/:roomId/points/:pointId", handlers.DeletePoint)
 

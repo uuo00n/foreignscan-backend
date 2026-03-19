@@ -704,6 +704,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/pad/bind": {
+            "post": {
+                "description": "Pad输入绑定码后完成与房间绑定，同时写入房间鉴权密钥",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Pad使用绑定码完成绑定",
+                "parameters": [
+                    {
+                        "description": "Pad绑定参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.bindPadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "410": {
+                        "description": "Gone",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/predict": {
             "post": {
                 "consumes": [
@@ -865,19 +942,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/rooms/{roomId}/pad-binding": {
-            "patch": {
-                "description": "为房间设置或更新 padId 与 padKey（padKey仅存哈希）",
-                "consumes": [
-                    "application/json"
-                ],
+        "/rooms/{roomId}/pad-binding-keys": {
+            "post": {
+                "description": "在指定房间生成一次性Pad绑定码（10分钟有效）",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rooms"
                 ],
-                "summary": "更新房间与Pad绑定",
+                "summary": "生成房间Pad绑定码",
                 "parameters": [
                     {
                         "type": "string",
@@ -885,15 +959,6 @@ const docTemplate = `{
                         "name": "roomId",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "description": "Pad绑定信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.patchRoomPadBindingRequest"
-                        }
                     }
                 ],
                 "responses": {
@@ -913,13 +978,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1529,6 +1587,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.bindPadRequest": {
+            "type": "object",
+            "properties": {
+                "bindKey": {
+                    "type": "string"
+                },
+                "padId": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.importRoomsRequest": {
             "type": "object",
             "properties": {
@@ -1541,9 +1610,6 @@ const docTemplate = `{
                                 "type": "string"
                             },
                             "id": {
-                                "type": "string"
-                            },
-                            "model_path": {
                                 "type": "string"
                             },
                             "name": {
@@ -1580,17 +1646,6 @@ const docTemplate = `{
                             }
                         }
                     }
-                }
-            }
-        },
-        "handlers.patchRoomPadBindingRequest": {
-            "type": "object",
-            "properties": {
-                "padId": {
-                    "type": "string"
-                },
-                "padKey": {
-                    "type": "string"
                 }
             }
         },

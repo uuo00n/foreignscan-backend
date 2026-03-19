@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"strings"
@@ -29,7 +33,6 @@ type roomTreeView struct {
 	ID            string      `json:"id"`
 	Name          string      `json:"name"`
 	Description   string      `json:"description"`
-	ModelPath     string      `json:"modelPath"`
 	Status        string      `json:"status"`
 	PadID         string      `json:"padId,omitempty"`
 	PadLastSeenAt *time.Time  `json:"padLastSeenAt,omitempty"`
@@ -89,7 +92,6 @@ func GetRoomsTree(c *gin.Context) {
 			ID:            room.ID,
 			Name:          room.Name,
 			Description:   room.Description,
-			ModelPath:     room.ModelPath,
 			Status:        room.Status,
 			PadID:         stringValue(room.PadID),
 			PadLastSeenAt: room.PadLastSeenAt,
@@ -131,7 +133,6 @@ func GetPadRoomContext(c *gin.Context) {
 			"id":            room.ID,
 			"name":          room.Name,
 			"description":   room.Description,
-			"modelPath":     room.ModelPath,
 			"status":        room.Status,
 			"padId":         stringValue(room.PadID),
 			"padLastSeenAt": room.PadLastSeenAt,
@@ -146,7 +147,6 @@ type importRoomsRequest struct {
 		ID          string `json:"id"`
 		Name        string `json:"name"`
 		Description string `json:"description"`
-		ModelPath   string `json:"model_path"`
 		PadID       string `json:"pad_id"`
 		PadIDCamel  string `json:"padId"`
 		Status      string `json:"status"`
@@ -165,9 +165,25 @@ type createPointRequest struct {
 	Location string `json:"location"`
 }
 
-type patchRoomPadBindingRequest struct {
-	PadID  string `json:"padId"`
-	PadKey string `json:"padKey"`
+type bindPadRequest struct {
+	BindKey string `json:"bindKey"`
+	PadID   string `json:"padId"`
+}
+
+const padBindingKeyTTL = 10 * time.Minute
+
+func generatePadBindingKey() (string, error) {
+	buf := make([]byte, 20)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	token := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(buf)
+	return "PBK-" + token, nil
+}
+
+func bindingKeyLookupHash(bindKey string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(bindKey)))
+	return hex.EncodeToString(sum[:])
 }
 
 // ImportRooms godoc
@@ -217,7 +233,6 @@ func ImportRooms(c *gin.Context) {
 				ID:          inRoom.ID,
 				Name:        inRoom.Name,
 				Description: inRoom.Description,
-				ModelPath:   inRoom.ModelPath,
 				Status:      inRoom.Status,
 				IsActive:    true,
 				CreatedAt:   now,
@@ -248,37 +263,21 @@ func ImportRooms(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "导入成功（已重建 rooms/points 并清空历史检测数据）"})
 }
 
-// PatchRoomPadBinding godoc
-// @Summary 更新房间与Pad绑定
-// @Description 为房间设置或更新 padId 与 padKey（padKey仅存哈希）
+// CreateRoomPadBindingKey godoc
+// @Summary 生成房间Pad绑定码
+// @Description 在指定房间生成一次性Pad绑定码（10分钟有效）
 // @Tags rooms
-// @Accept json
 // @Produce json
 // @Param roomId path string true "房间ID"
-// @Param body body patchRoomPadBindingRequest true "Pad绑定信息"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Failure 409 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
-// @Router /rooms/{roomId}/pad-binding [patch]
-func PatchRoomPadBinding(c *gin.Context) {
+// @Router /rooms/{roomId}/pad-binding-keys [post]
+func CreateRoomPadBindingKey(c *gin.Context) {
 	roomID := strings.TrimSpace(c.Param("roomId"))
 	if roomID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "roomId 不能为空"})
-		return
-	}
-
-	var req patchRoomPadBindingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求数据无效: " + err.Error()})
-		return
-	}
-
-	padID := strings.TrimSpace(req.PadID)
-	padKey := strings.TrimSpace(req.PadKey)
-	if padID == "" || padKey == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "padId 与 padKey 不能为空"})
 		return
 	}
 
@@ -286,6 +285,112 @@ func PatchRoomPadBinding(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "房间不存在"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询房间失败: " + err.Error()})
+		return
+	}
+
+	bindKey, err := generatePadBindingKey()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "生成绑定码失败: " + err.Error()})
+		return
+	}
+	now := time.Now()
+	expiresAt := now.Add(padBindingKeyTTL)
+	lookupHash := bindingKeyLookupHash(bindKey)
+
+	db := database.GetDB()
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.PadBindingKey{}).
+			Where("room_id = ? AND status = ?", roomID, models.PadBindingKeyStatusActive).
+			Updates(map[string]interface{}{
+				"status":     models.PadBindingKeyStatusInvalidated,
+				"updated_at": now,
+			}).Error; err != nil {
+			return err
+		}
+
+		keyRecord := models.PadBindingKey{
+			RoomID:     roomID,
+			LookupHash: lookupHash,
+			ExpiresAt:  expiresAt,
+			Status:     models.PadBindingKeyStatusActive,
+		}
+		if err := tx.Create(&keyRecord).Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "保存绑定码失败: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"bindingKey": gin.H{
+			"roomId":    room.ID,
+			"roomName":  room.Name,
+			"bindKey":   bindKey,
+			"expiresAt": expiresAt,
+		},
+	})
+}
+
+// BindPadWithKey godoc
+// @Summary Pad使用绑定码完成绑定
+// @Description Pad输入绑定码后完成与房间绑定，同时写入房间鉴权密钥
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param body body bindPadRequest true "Pad绑定参数"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Failure 410 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /pad/bind [post]
+func BindPadWithKey(c *gin.Context) {
+	var req bindPadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求数据无效: " + err.Error()})
+		return
+	}
+
+	bindKey := strings.TrimSpace(req.BindKey)
+	padID := strings.TrimSpace(req.PadID)
+	if bindKey == "" || padID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "bindKey 与 padId 不能为空"})
+		return
+	}
+
+	keyRecord, err := models.FindPadBindingKeyByLookupHash(bindingKeyLookupHash(bindKey))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "绑定码无效"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询绑定码失败: " + err.Error()})
+		return
+	}
+
+	now := time.Now()
+	if keyRecord.Status != models.PadBindingKeyStatusActive || keyRecord.UsedAt != nil {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "message": "绑定码已使用或已失效"})
+		return
+	}
+	if keyRecord.ExpiresAt.Before(now) {
+		_ = models.MarkPadBindingKeyExpired(keyRecord.ID)
+		c.JSON(http.StatusGone, gin.H{"success": false, "message": "绑定码已过期"})
+		return
+	}
+
+	room, err := models.FindRoomByID(strings.TrimSpace(keyRecord.RoomID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "绑定码对应房间不存在"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "查询房间失败: " + err.Error()})
@@ -302,20 +407,47 @@ func PatchRoomPadBinding(c *gin.Context) {
 		return
 	}
 
-	keyHash, err := hashPadKey(padKey)
+	keyHash, err := hashPadKey(bindKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "生成 padKey 哈希失败: " + err.Error()})
 		return
 	}
 
-	room.PadID = &padID
-	room.PadKeyHash = keyHash
-	if err := room.Update(); err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "duplicate key") {
-			c.JSON(http.StatusConflict, gin.H{"success": false, "message": "padId 已绑定其他房间"})
-			return
+	db := database.GetDB()
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Room{}).
+			Where("id = ?", room.ID).
+			Updates(map[string]interface{}{
+				"pad_id":       padID,
+				"pad_key_hash": keyHash,
+				"updated_at":   now,
+			}).Error; err != nil {
+			return err
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "更新房间绑定失败: " + err.Error()})
+
+		if err := tx.Model(&models.PadBindingKey{}).
+			Where("id = ?", keyRecord.ID).
+			Updates(map[string]interface{}{
+				"status":      models.PadBindingKeyStatusUsed,
+				"used_at":     now,
+				"used_pad_id": padID,
+				"updated_at":  now,
+			}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&models.PadBindingKey{}).
+			Where("room_id = ? AND id <> ? AND status = ?", room.ID, keyRecord.ID, models.PadBindingKeyStatusActive).
+			Updates(map[string]interface{}{
+				"status":     models.PadBindingKeyStatusInvalidated,
+				"updated_at": now,
+			}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "更新绑定关系失败: " + err.Error()})
 		return
 	}
 

@@ -82,6 +82,13 @@ definitions:
       name:
         type: string
     type: object
+  handlers.bindPadRequest:
+    properties:
+      bindKey:
+        type: string
+      padId:
+        type: string
+    type: object
   handlers.importRoomsRequest:
     properties:
       rooms:
@@ -90,8 +97,6 @@ definitions:
             description:
               type: string
             id:
-              type: string
-            model_path:
               type: string
             name:
               type: string
@@ -116,13 +121,6 @@ definitions:
               type: string
           type: object
         type: array
-    type: object
-  handlers.patchRoomPadBindingRequest:
-    properties:
-      padId:
-        type: string
-      padKey:
-        type: string
     type: object
   models.BoundingBox:
     properties:
@@ -670,6 +668,59 @@ paths:
       summary: 获取Pad绑定房间上下文
       tags:
       - rooms
+  /pad/bind:
+    post:
+      consumes:
+      - application/json
+      description: Pad输入绑定码后完成与房间绑定，同时写入房间鉴权密钥
+      parameters:
+      - description: Pad绑定参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.bindPadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "410":
+          description: Gone
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Pad使用绑定码完成绑定
+      tags:
+      - rooms
   /predict:
     post:
       consumes:
@@ -742,23 +793,15 @@ paths:
       summary: 就绪探针
       tags:
       - system
-  /rooms/{roomId}/pad-binding:
-    patch:
-      consumes:
-      - application/json
-      description: 为房间设置或更新 padId 与 padKey（padKey仅存哈希）
+  /rooms/{roomId}/pad-binding-keys:
+    post:
+      description: 在指定房间生成一次性Pad绑定码（10分钟有效）
       parameters:
       - description: 房间ID
         in: path
         name: roomId
         required: true
         type: string
-      - description: Pad绑定信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.patchRoomPadBindingRequest'
       produces:
       - application/json
       responses:
@@ -777,17 +820,12 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
-      summary: 更新房间与Pad绑定
+      summary: 生成房间Pad绑定码
       tags:
       - rooms
   /rooms/{roomId}/points:

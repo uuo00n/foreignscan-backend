@@ -4,7 +4,7 @@ set -euo pipefail
 # 一次性重建脚本：清空历史数据 + 清空上传目录（不可恢复）
 # 依赖：FS_POSTGRES_DSN 已配置，或 .env 中存在。
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 if [[ -z "${FS_POSTGRES_DSN:-}" ]]; then

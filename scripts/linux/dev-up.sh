@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env.docker}"
 BACKEND_BASE="${BACKEND_BASE:-http://127.0.0.1:3000}"
 YOLO_BASE="${YOLO_BASE:-http://127.0.0.1:8077}"
@@ -131,5 +131,5 @@ run_contract_checks() {
   echo "[contract][OK] 联调契约检查通过"
 }
 
-"${ROOT_DIR}/scripts/docker-up.sh" dev "$@"
+"${ROOT_DIR}/scripts/linux/docker-up.sh" dev "$@"
 run_contract_checks

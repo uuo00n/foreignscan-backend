@@ -38,30 +38,55 @@
 
 ### 启动方式总览
 
+Linux/macOS:
+
 ```bash
 # 开发环境启动（按顺序：postgres -> healthy -> api）
-./scripts/dev-up.sh
+./scripts/linux/dev-up.sh
 
 # 开发环境重建（先 down，再 build+up，保留 volumes）
-./scripts/dev-rebuild.sh
+./scripts/linux/dev-rebuild.sh
 
 # 开发环境停止
-./scripts/dev-down.sh
+./scripts/linux/dev-down.sh
 
 # 生产环境启动（按顺序：postgres -> healthy -> api）
-./scripts/prod-up.sh
+./scripts/linux/prod-up.sh
 
 # 生产环境重建（先 down，再 build+up，保留 volumes）
-./scripts/prod-rebuild.sh
+./scripts/linux/prod-rebuild.sh
 
 # 生产环境停止
-./scripts/prod-down.sh
+./scripts/linux/prod-down.sh
+```
+
+Windows PowerShell:
+
+```powershell
+# 开发环境启动（按顺序：postgres -> healthy -> api）
+.\scripts\windows\dev-up.ps1
+
+# 开发环境重建（先 down，再 build+up，保留 volumes）
+.\scripts\windows\dev-rebuild.ps1
+
+# 开发环境停止
+.\scripts\windows\dev-down.ps1
+
+# 生产环境启动（按顺序：postgres -> healthy -> api）
+.\scripts\windows\prod-up.ps1
+
+# 生产环境重建（先 down，再 build+up，保留 volumes）
+.\scripts\windows\prod-rebuild.ps1
+
+# 生产环境停止
+.\scripts\windows\prod-down.ps1
 ```
 
 ### 前置要求
 
 - **Docker**: 29+
 - **Docker Compose**: v2+
+- **Windows 执行环境**: PowerShell 5.1+ 或 PowerShell 7+
 - **YOLO 检测服务**: 仍为外部依赖，默认地址为 `http://host.docker.internal:8077`
 
 ### 1. 准备 Docker 环境变量
@@ -87,36 +112,60 @@ cp .env.docker.example .env.docker
 开发版（前台日志可改为 `-d` 后自行看 logs）：
 
 ```bash
-./scripts/dev-up.sh
+./scripts/linux/dev-up.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\windows\dev-up.ps1
 ```
 
 如果你改了 Dockerfile、Compose 配置，或者想整套容器重建但保留数据卷，直接执行：
 
 ```bash
-./scripts/dev-rebuild.sh
+./scripts/linux/dev-rebuild.sh
+```
+
+```powershell
+.\scripts\windows\dev-rebuild.ps1
 ```
 
 生产版：
 
 ```bash
-./scripts/prod-up.sh
+./scripts/linux/prod-up.sh
+```
+
+```powershell
+.\scripts\windows\prod-up.ps1
 ```
 
 生产版整套重建：
 
 ```bash
-./scripts/prod-rebuild.sh
+./scripts/linux/prod-rebuild.sh
+```
+
+```powershell
+.\scripts\windows\prod-rebuild.ps1
 ```
 
 停止服务：
 
 ```bash
-./scripts/dev-down.sh
+./scripts/linux/dev-down.sh
 # 或
-./scripts/prod-down.sh
+./scripts/linux/prod-down.sh
 ```
 
-`./scripts/dev-rebuild.sh` / `./scripts/prod-rebuild.sh` 会先执行 `down --remove-orphans`，再执行 `up --build`，默认保留数据库和上传文件 volumes。
+```powershell
+.\scripts\windows\dev-down.ps1
+# 或
+.\scripts\windows\prod-down.ps1
+```
+
+`./scripts/linux/dev-rebuild.sh` / `./scripts/linux/prod-rebuild.sh` 会先执行 `down --remove-orphans`，再执行 `up --build`，默认保留数据库和上传文件 volumes。
 
 ### 3. 手动分步启动（需要明确顺序时）
 

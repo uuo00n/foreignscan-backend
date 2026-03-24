@@ -60,33 +60,10 @@ Linux/macOS:
 ./scripts/linux/prod-down.sh
 ```
 
-Windows PowerShell:
-
-```powershell
-# 开发环境启动（按顺序：postgres -> healthy -> api）
-.\scripts\windows\dev-up.ps1
-
-# 开发环境重建（先 down，再 build+up，保留 volumes）
-.\scripts\windows\dev-rebuild.ps1
-
-# 开发环境停止
-.\scripts\windows\dev-down.ps1
-
-# 生产环境启动（按顺序：postgres -> healthy -> api）
-.\scripts\windows\prod-up.ps1
-
-# 生产环境重建（先 down，再 build+up，保留 volumes）
-.\scripts\windows\prod-rebuild.ps1
-
-# 生产环境停止
-.\scripts\windows\prod-down.ps1
-```
-
 ### 前置要求
 
 - **Docker**: 29+
 - **Docker Compose**: v2+
-- **Windows 执行环境**: PowerShell 5.1+ 或 PowerShell 7+
 - **YOLO 检测服务**: 仍为外部依赖，默认地址为 `http://host.docker.internal:8077`
 
 ### 1. 准备 Docker 环境变量
@@ -115,20 +92,10 @@ cp .env.docker.example .env.docker
 ./scripts/linux/dev-up.sh
 ```
 
-Windows PowerShell:
-
-```powershell
-.\scripts\windows\dev-up.ps1
-```
-
 如果你改了 Dockerfile、Compose 配置，或者想整套容器重建但保留数据卷，直接执行：
 
 ```bash
 ./scripts/linux/dev-rebuild.sh
-```
-
-```powershell
-.\scripts\windows\dev-rebuild.ps1
 ```
 
 生产版：
@@ -137,18 +104,10 @@ Windows PowerShell:
 ./scripts/linux/prod-up.sh
 ```
 
-```powershell
-.\scripts\windows\prod-up.ps1
-```
-
 生产版整套重建：
 
 ```bash
 ./scripts/linux/prod-rebuild.sh
-```
-
-```powershell
-.\scripts\windows\prod-rebuild.ps1
 ```
 
 停止服务：
@@ -159,33 +118,50 @@ Windows PowerShell:
 ./scripts/linux/prod-down.sh
 ```
 
-```powershell
-.\scripts\windows\dev-down.ps1
-# 或
-.\scripts\windows\prod-down.ps1
-```
-
 `./scripts/linux/dev-rebuild.sh` / `./scripts/linux/prod-rebuild.sh` 会先执行 `down --remove-orphans`，再执行 `up --build`，默认保留数据库和上传文件 volumes。
 
-### 3. 手动分步启动（需要明确顺序时）
+### 3. Windows 手动容器管理命令（docker compose）
 
-开发版会挂载源码目录，适合本机开发调试，同时暴露：
+以下命令适用于 Windows 环境（PowerShell/cmd），需在 `foreignscan-backend` 根目录执行。
 
-- API: `http://localhost:3000`
-- PostgreSQL: `localhost:5432`
+开发环境（`compose.dev.yml`）：
 
 ```bash
-docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d postgres
-docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml ps
-docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up --build -d api
+# 启动容器
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up -d postgres api
+
+# 重新构建容器
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml down --remove-orphans
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml up --build -d postgres api
+
+# 重启容器
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml restart postgres api
+
+# 删除容器（保留数据卷）
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml down --remove-orphans
+
+# 如需同时删除数据卷
+docker compose --env-file .env.docker -f compose.yml -f compose.dev.yml down --remove-orphans --volumes
 ```
 
-生产版会构建精简运行镜像，不挂载源码，数据库仅在容器网络内可见：
+生产环境（`compose.prod.yml`）：
 
 ```bash
-docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up -d postgres
-docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml ps
-docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up --build -d api
+# 启动容器
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up -d postgres api
+
+# 重新构建容器
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml down --remove-orphans
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml up --build -d postgres api
+
+# 重启容器
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml restart postgres api
+
+# 删除容器（保留数据卷）
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml down --remove-orphans
+
+# 如需同时删除数据卷
+docker compose --env-file .env.docker -f compose.yml -f compose.prod.yml down --remove-orphans --volumes
 ```
 
 ### 4. 启动后校验

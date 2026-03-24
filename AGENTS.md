@@ -10,7 +10,7 @@
   - `config/`, `middleware/`, `utils/` shared runtime concerns
 - `pkg/utils/`: reusable utility code outside `internal`.
 - `docs/`: generated Swagger artifacts (`docs.go`, `swagger.json`, `swagger.yaml`).
-- `scripts/`: platform scripts under `scripts/linux/` and `scripts/windows/`, plus sample data under `scripts/data/`.
+- `scripts/`: Linux scripts under `scripts/linux/`, plus sample data under `scripts/data/`.
 - Runtime folders: `uploads/`, `public/` (do not treat as source of truth for code changes).
 
 ## Build, Test, and Development Commands
@@ -19,7 +19,7 @@
 - `go build -o bin/server ./cmd/server`: build executable.
 - `go test ./...`: run all unit tests.
 - Linux/macOS: `./scripts/linux/dev-up.sh` / `./scripts/linux/dev-down.sh`, `./scripts/linux/prod-up.sh` / `./scripts/linux/prod-down.sh`.
-- Windows PowerShell: `.\scripts\windows\dev-up.ps1` / `.\scripts\windows\dev-down.ps1`, `.\scripts\windows\prod-up.ps1` / `.\scripts\windows\prod-down.ps1`.
+- Windows: use manual `docker compose` commands documented in `README.md`.
 
 ## Coding Style & Naming Conventions
 - Use standard Go formatting (`gofmt`) and idiomatic Go style.

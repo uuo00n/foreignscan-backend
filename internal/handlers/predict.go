@@ -204,8 +204,11 @@ func Predict(c *gin.Context) {
 	processedPath := webPath
 	processedFilename := filename
 	if strings.TrimSpace(dr.LabeledPath) != "" {
-		processedPath = dr.LabeledPath
-		processedFilename = path.Base(dr.LabeledPath)
+		normalized := utils.NormalizeToStoredUploadsPath(dr.LabeledPath)
+		if normalized != "" {
+			processedPath = normalized
+			processedFilename = path.Base(normalized)
+		}
 	}
 
 	run := &models.DetectionRun{
@@ -237,6 +240,8 @@ func Predict(c *gin.Context) {
 		return
 	}
 
+	labeledPath := utils.NormalizeToUploadsWebPath(processedPath)
+
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"imageId":     img.ID,
@@ -244,6 +249,6 @@ func Predict(c *gin.Context) {
 		"pointId":     pointID,
 		"detections":  items,
 		"summary":     run.Summary,
-		"labeledPath": processedPath,
+		"labeledPath": labeledPath,
 	})
 }

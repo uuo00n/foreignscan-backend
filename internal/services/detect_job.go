@@ -326,33 +326,6 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 		projectDir := filepath.Join(uploadsRoot, "labels")
 		jobDir := filepath.Join(projectDir, roomKey)
 		_ = os.MkdirAll(jobDir, 0o755)
-		normalizeWebPath := func(p string) string {
-			p = strings.TrimSpace(p)
-			if p == "" {
-				return ""
-			}
-			raw := filepath.Clean(p)
-			if filepath.IsAbs(raw) {
-				if rel, err := filepath.Rel(uploadsRoot, raw); err == nil {
-					if rel == "." {
-						return "uploads"
-					}
-					if !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) && rel != ".." {
-						return filepath.ToSlash(filepath.Join("uploads", rel))
-					}
-				}
-			}
-			s := filepath.ToSlash(raw)
-			s = strings.TrimPrefix(s, "./")
-			s = strings.TrimPrefix(s, "/")
-			if s == "uploads" {
-				return "uploads"
-			}
-			if strings.HasPrefix(s, "uploads/") {
-				return s
-			}
-			return "uploads/" + s
-		}
 
 		if cfg.ServiceURL != "" {
 			job.Status = "running"
@@ -456,8 +429,11 @@ func StartImageDetect(imageID string, cfg DetectConfig) (string, error) {
 			processedPath := sourcePath
 			processedFilename := im.Filename
 			if strings.TrimSpace(dr.LabeledPath) != "" {
-				processedPath = normalizeWebPath(dr.LabeledPath)
-				processedFilename = path.Base(processedPath)
+				normalized := utils.NormalizeToStoredUploadsPath(dr.LabeledPath)
+				if normalized != "" {
+					processedPath = normalized
+					processedFilename = path.Base(normalized)
+				}
 			}
 			// 若服务未返回 items，但存在处理后图片，则尝试解析同名标签生成 items
 			if len(items) == 0 && strings.TrimSpace(processedPath) != "" {

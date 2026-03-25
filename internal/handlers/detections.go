@@ -81,17 +81,6 @@ func GetImageDetections(c *gin.Context) {
 		ProcessedURL        string                  `json:"processedUrl"`
 	}
 
-	webPath := func(p string) string {
-		if p == "" {
-			return ""
-		}
-		s := strings.ReplaceAll(p, "\\", "/")
-		if !strings.HasPrefix(s, "/") {
-			s = "/" + s
-		}
-		return s
-	}
-
 	views := make([]detectionRunView, 0, len(runs))
 	for _, r := range runs {
 		v := detectionRunView{
@@ -114,8 +103,8 @@ func GetImageDetections(c *gin.Context) {
 			Summary:             r.Summary,
 			CreatedAt:           r.CreatedAt,
 			UpdatedAt:           r.UpdatedAt,
-			SourceURL:           webPath(r.SourcePath),
-			ProcessedURL:        webPath(r.ProcessedPath),
+			SourceURL:           utils.NormalizeToUploadsWebPath(r.SourcePath),
+			ProcessedURL:        utils.NormalizeToUploadsWebPath(r.ProcessedPath),
 		}
 		views = append(views, v)
 	}

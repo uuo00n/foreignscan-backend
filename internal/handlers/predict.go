@@ -13,8 +13,9 @@ import (
 	"time"
 
 	"foreignscan/internal/config"
+	internalutils "foreignscan/internal/utils"
 	"foreignscan/internal/models"
-	"foreignscan/pkg/utils"
+	pkgutils "foreignscan/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
@@ -115,11 +116,11 @@ func Predict(c *gin.Context) {
 	if ext == "" {
 		ext = ".jpg"
 	}
-	filename := utils.GenerateUUID() + ext
+	filename := pkgutils.GenerateUUID() + ext
 
 	uploadsRoot := config.Get().UploadDir
 	imagesDir := filepath.Join(uploadsRoot, "images", roomID, pointID)
-	if err := utils.EnsureDir(imagesDir); err != nil {
+	if err := pkgutils.EnsureDir(imagesDir); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "创建上传目录失败: " + err.Error()})
 		return
 	}
@@ -137,7 +138,7 @@ func Predict(c *gin.Context) {
 	}
 	now := time.Now()
 	img := models.Image{
-		ID:               utils.GenerateObjectID(),
+		ID:               pkgutils.GenerateObjectID(),
 		SequenceNumber:   seq,
 		RoomID:           roomID,
 		PointID:          pointID,
@@ -204,7 +205,7 @@ func Predict(c *gin.Context) {
 	processedPath := webPath
 	processedFilename := filename
 	if strings.TrimSpace(dr.LabeledPath) != "" {
-		normalized := utils.NormalizeToStoredUploadsPath(dr.LabeledPath)
+		normalized := internalutils.NormalizeToStoredUploadsPath(dr.LabeledPath)
 		if normalized != "" {
 			processedPath = normalized
 			processedFilename = path.Base(normalized)
@@ -240,7 +241,7 @@ func Predict(c *gin.Context) {
 		return
 	}
 
-	labeledPath := utils.NormalizeToUploadsWebPath(processedPath)
+	labeledPath := internalutils.NormalizeToUploadsWebPath(processedPath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,

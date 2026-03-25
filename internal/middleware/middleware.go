@@ -10,6 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var defaultAllowHeaders = []string{
+	"Origin",
+	"Content-Type",
+	"Accept",
+	"Authorization",
+	"X-Requested-With",
+	"X-CSRF-Token",
+	"X-Pad-Id",
+	"X-Pad-Key",
+}
+
 func parseAllowedOrigins(raw string) []string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -47,7 +58,7 @@ func Setup(r *gin.Engine) {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     origins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-CSRF-Token"},
+		AllowHeaders:     defaultAllowHeaders,
 		ExposeHeaders:    []string{"Content-Length", "Content-Type", "Authorization"},
 		AllowCredentials: !hasWildcard(origins),
 		MaxAge:           12 * time.Hour,
